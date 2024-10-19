@@ -1,0 +1,185 @@
+@import '~@microsoft/sp-office-ui-fabric-core/dist/sass/SPFabricCore.scss';
+
+.spfxExtensionloader {
+  overflow: hidden;
+  padding: 1em;
+  color: "[theme:bodyText, default: #323130]";
+  color: var(--bodyText);
+  &.teams {
+    font-family: $ms-font-family-fallbacks;
+  }
+}
+
+.welcome {
+  text-align: center;
+}
+
+.welcomeImage {
+  width: 100%;
+  max-width: 420px;
+}
+
+.links {
+  a {
+    text-decoration: none;
+    color: "[theme:link, default:#03787c]";
+    color: var(--link); // note: CSS Custom Properties support is limited to modern browsers only
+
+    &:hover {
+      text-decoration: underline;
+      color: "[theme:linkHovered, default: #014446]";
+      color: var(--linkHovered); // note: CSS Custom Properties support is limited to modern browsers only
+    }
+  }
+}
+
+.SPFxExtensionApp {
+  .loader {
+    width: 28px;
+    height: 28px;
+    border: 2px solid #003755;
+    border-bottom-color: #009fda;
+    border-radius: 50%;
+    display: inline-block;
+    box-sizing: border-box;
+    animation: rotation 1s linear infinite;
+  }
+
+  @keyframes rotation {
+    0% {
+      transform: rotate(0deg);
+    }
+
+    100% {
+      transform: rotate(360deg);
+    }
+  }
+
+  .buttonLoader {
+    height: 80px;
+    width: 120px;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .shimmerShine {
+    height: 80px;
+    width: 120px;
+    border: none;
+    background: #f6f7f8;
+    background-image: linear-gradient(
+      to right,
+      #f6f7f8 0%,
+      #edeef1 20%,
+      #f6f7f8 40%,
+      #f6f7f8 100%
+    );
+    background-repeat: no-repeat;
+    background-size: 200px 80px;
+    display: block;
+    position: relative;
+
+    -webkit-animation-duration: 1s;
+    -webkit-animation-fill-mode: forwards;
+    -webkit-animation-iteration-count: infinite;
+    -webkit-animation-name: placeholderShimmer;
+    -webkit-animation-timing-function: linear;
+  }
+
+  @-webkit-keyframes placeholderShimmer {
+    0% {
+      background-position: -80px 0;
+    }
+
+    100% {
+      background-position: 120px 0;
+    }
+  }
+
+  @keyframes placeholderShimmer {
+    0% {
+      background-position: -80px 0;
+    }
+
+    100% {
+      background-position: 120px 0;
+    }
+  }
+  .applicationListSection {
+    text-align: center;
+    min-height: 320px;
+    justify-content: center;
+    display: -ms-flexbox;
+    display: flex;
+    -ms-flex-direction: column;
+    flex-direction: column;
+    flex-wrap: wrap;
+  }
+
+  .header {
+    color: #242424;
+    font-weight: 600;
+    letter-spacing: 1px;
+    line-height: 32px;
+    padding: 0 12px;
+  }
+
+  .icon {
+    font-size: 28px;
+    height: 28px;
+    line-height: 28px;
+    min-width: 28px;
+    width: 28px;
+    font-style: normal;
+    > svg {
+      width: 100%;
+      height: auto;
+    }
+    > img {
+      width: 100%;
+      height: auto;
+    }
+  }
+
+  .iconFont {
+    background-color: #f6f7f8;
+  }
+
+  .appButtonsContainer {
+    display: flex;
+    height: 100%;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .appButtonsWrapper {
+    width: 100%;
+    height: 100%;
+    box-sizing: border-box;
+    display: -ms-flexbox;
+    display: flex;
+    -ms-flex-direction: column;
+    flex-direction: column;
+    -ms-flex-pack: start;
+    justify-content: flex-start;
+    -ms-flex-align: center;
+    align-items: center;
+  }
+
+  .appButton {
+    height: 80px;
+    width: 120px;
+    border: none;
+    background-color: unset;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding-top: 14px;
+    &:hover {
+      background-color: #c8e3fa;
+    }
+  }
+}

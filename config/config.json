@@ -1,0 +1,27 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/spfx-build/config.2.0.schema.json",
+  "version": "2.0",
+  "bundles": {
+    "spfx-extension-application-customizer": {
+      "components": [
+        {
+          "entrypoint": "./lib/extensions/spfxExtension/SpfxExtensionApplicationCustomizer.js",
+          "manifest": "./src/extensions/spfxExtension/SpfxExtensionApplicationCustomizer.manifest.json"
+        }
+      ]
+    },
+    "spfx-extensionloader-web-part": {
+      "components": [
+        {
+          "entrypoint": "./lib/webparts/spfxExtensionloader/SpfxExtensionloaderWebPart.js",
+          "manifest": "./src/webparts/spfxExtensionloader/SpfxExtensionloaderWebPart.manifest.json"
+        }
+      ]
+    }
+  },
+  "externals": {},
+  "localizedResources": {
+    "SpfxExtensionApplicationCustomizerStrings": "lib/extensions/spfxExtension/loc/{locale}.js",
+    "SpfxExtensionloaderWebPartStrings": "lib/webparts/spfxExtensionloader/loc/{locale}.js"
+  }
+}

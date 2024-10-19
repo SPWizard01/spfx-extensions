@@ -1,0 +1,21 @@
+{
+  "@microsoft/generator-sharepoint": {
+    "plusBeta": false,
+    "isCreatingSolution": false,
+    "nodeVersion": "18.18.2",
+    "sdksVersions": {
+      "@microsoft/microsoft-graph-client": "3.0.2",
+      "@microsoft/teams-js": "2.24.0"
+    },
+    "version": "1.20.0",
+    "libraryName": "sp-fx-extensions",
+    "libraryId": "ff36e5d0-f7c7-421d-9e21-0a422626209a",
+    "environment": "spo",
+    "packageManager": "npm",
+    "solutionName": "SPFxExtensions",
+    "solutionShortDescription": "SPFxExtensions description",
+    "skipFeatureDeployment": true,
+    "isDomainIsolated": false,
+    "componentType": "webpart"
+  }
+}
