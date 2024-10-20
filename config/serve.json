@@ -4,27 +4,15 @@
   "https": true,
   "serveConfigurations": {
     "default": {
-      "pageUrl": "https://{tenantDomain}/SitePages/myPage.aspx",
-      "customActions": {
-        "84aeb4f6-4f59-4cb8-81fc-5f14313a4427": {
-          "location": "ClientSideExtension.ApplicationCustomizer",
-          "properties": {
-            "testMessage": "Test message"
-          }
-        }
-      }
-    },
-    "spfxExtension": {
-      "pageUrl": "https://{tenantDomain}/SitePages/myPage.aspx",
+      "pageUrl": "https://8s2kdn.sharepoint.com/SitePages/WebpartWorkbench.aspx",
       "customActions": {
         "8d1029da-85e6-48cc-aaaf-37a5bbc0b9be": {
           "location": "ClientSideExtension.ApplicationCustomizer",
           "properties": {
-            "testMessage": "Test message"
           }
         }
       }
     }
   },
-  "initialPage": "https://{tenantDomain}/_layouts/workbench.aspx"
+  "initialPage": "https://8s2kdn.sharepoint.com/_layouts/workbench.aspx"
 }

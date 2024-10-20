@@ -1,16 +1,33 @@
 "use strict";
 
 const build = require("@microsoft/sp-build-web");
+const { spawnSync } = require("child_process");
+const path = require("path");
 const isProd = process.argv.indexOf("--ship") > -1;
 build.addSuppression(
   `Warning - [sass] The local CSS class 'ms-Grid' is not camelCase and will not be type-safe.`
 );
-build.addSuppression(
-  `Warning - [webpack] No webpack config has been provided. Create a webpack.config.js file or call webpack.setConfig({ configPath: null }) in your gulpfile.`
-);
+// build.addSuppression(
+//   `Warning - [webpack] No webpack config has been provided. Create a webpack.config.js file or call webpack.setConfig({ configPath: null }) in your gulpfile.`
+// );
+// build.webpack.setConfig({
+//   configPath: "./webpack.config.js"
+// })
+
+build.tscCmd.executeTask = function () {
+  console.log("Overriding tscCmd.executeTask");
+  spawnSync("npx", ["tsc", "--build", "--verbose"], {
+    shell: true,
+    stdio: "inherit",
+    cwd: path.resolve(__dirname),
+  });
+  return Promise.resolve();
+};
 
 build.configureWebpack.mergeConfig({
   additionalConfiguration: (generatedConfiguration) => {
+    // generatedConfiguration.optimization.usedExports = true;
+    //generatedConfiguration.resolve.extensions.push(".ts");
     const definePlugin = generatedConfiguration.plugins.find(
       (p) => p.definitions
     );
@@ -24,6 +41,7 @@ build.configureWebpack.mergeConfig({
     } else {
       console.error("No define plugin found in webpack configuration.");
     }
+    return generatedConfiguration;
   },
 });
 

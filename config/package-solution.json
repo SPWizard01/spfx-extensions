@@ -8,18 +8,18 @@
     "skipFeatureDeployment": true,
     "isDomainIsolated": false,
     "developer": {
-      "name": "",
-      "websiteUrl": "",
+      "name": "SPWizard01",
+      "websiteUrl": "https://github.com/SPWizard01/spfx-extensions",
       "privacyUrl": "",
-      "termsOfUseUrl": "",
+      "termsOfUseUrl": "https://github.com/SPWizard01/spfx-extensions/blob/main/LICENSE",
       "mpnId": "Undefined-1.20.0"
     },
     "metadata": {
       "shortDescription": {
-        "default": "SPFxExtensions description"
+        "default": "SPFxExtensions App allows you to develop framework agnostic apps."
       },
       "longDescription": {
-        "default": "SPFxExtensions description"
+        "default": "SPFxExtensions App is a SharePoint Framework (SPFx) extension that allows developers to create framework-agnostic applications. This solution provides a streamlined way to deploy extensions and client-side components, enhancing the functionality and user experience of SharePoint sites. With this extension, developers can easily integrate their custom solutions into SharePoint, leveraging the power of SPFx to build robust and scalable applications."
       },
       "screenshotPaths": [],
       "videoUrl": "",
@@ -32,15 +32,13 @@
         "id": "225f8170-c4f2-4f24-821b-e17c3af70fe1",
         "version": "1.0.0.0",
         "assets": {
-          "elementManifests": [
-            "elements.xml",
-            "ClientSideInstance.xml"
-          ]
+          "elementManifests": ["elements.xml", "ClientSideInstance.xml"]
         }
       }
     ]
   },
   "paths": {
-    "zippedPackage": "solution/sp-fx-extensions.sppkg"
+    "zippedPackage": "dist/deploy/solution/sp-fx-extensions.sppkg",
+    "debugDir": "temp/debug"
   }
 }

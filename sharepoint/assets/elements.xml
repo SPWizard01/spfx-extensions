@@ -3,7 +3,7 @@
     <CustomAction
         Title="SpFxExtensionsCustomizer"
         Location="ClientSideExtension.ApplicationCustomizer"
-        ClientSideComponentId="84aeb4f6-4f59-4cb8-81fc-5f14313a4427"
-        ClientSideComponentProperties="{&quot;testMessage&quot;:&quot;Test message&quot;}">
+        ClientSideComponentId="8d1029da-85e6-48cc-aaaf-37a5bbc0b9be"
+        ClientSideComponentProperties="">
     </CustomAction>
 </Elements>

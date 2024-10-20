@@ -1,4 +1,4 @@
-import { DisplayMode, Environment, EnvironmentType, Version } from '@microsoft/sp-core-library';
+import { DisplayMode, Environment, EnvironmentType, Version } from "@microsoft/sp-core-library";
 import {
   type IPropertyPaneConfiguration,
   IPropertyPaneCustomFieldProps,
@@ -8,15 +8,15 @@ import {
   PropertyPaneDropdown,
   PropertyPaneFieldType,
   PropertyPaneLabel
-} from '@microsoft/sp-property-pane';
-import { BaseClientSideWebPart, IWebPartPropertiesMetadata } from '@microsoft/sp-webpart-base';
-import type { IReadonlyTheme } from '@microsoft/sp-component-base';
+} from "@microsoft/sp-property-pane";
+import { BaseClientSideWebPart, IWebPartPropertiesMetadata } from "@microsoft/sp-webpart-base";
+import type { IReadonlyTheme } from "@microsoft/sp-component-base";
 
-import styles from './SpfxExtensionloaderWebPart.module.scss';
-//import * as strings from 'SpfxExtensionloaderWebPartStrings';
-import { SPFxExtensionAppConfig, SPFxExtensionAppDefinition, SPFxExtensionAppIcon, SPFxExtensionAppInstance, SPFxExtensionAppRuntimeConfig, SPFxExtensionAppSearchableData } from 'spfx-extensions-core';
-import { initCore } from '../../services/initCoreService';
-import { APP_BUTTON_LABEL, EDIT_PAGE_AND_SELECT_WEBPART, SELECT_WEBPART, SPFXPREFIX } from '../../utilities/constants';
+import styles from "./SpfxExtensionloaderWebPart.module.scss";
+//import * as strings from "SpfxExtensionloaderWebPartStrings";
+import { SPFxExtensionAppConfig, SPFxExtensionAppDefinition, SPFxExtensionAppIcon, SPFxExtensionAppInstance, SPFxExtensionAppRuntimeConfig, SPFxExtensionAppSearchableData } from "spfx-extensions-core";
+import { initCore } from "../../services/initCoreService";
+import { APP_BUTTON_LABEL, EDIT_PAGE_AND_SELECT_WEBPART, SELECT_WEBPART, SPFXPREFIX } from "../../utilities/constants";
 
 export interface ISpfxExtensionloaderWebPartProps extends SPFxExtensionAppSearchableData {
   selectedApp: string;
@@ -403,7 +403,8 @@ export default class SpfxExtensionloaderWebPart extends BaseClientSideWebPart<IS
       this.dropDownProps.disabled = false;
       // refresh to rerender the dropdown and description
       this.context.propertyPane.refresh();
-    }).catch((err) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    }).catch((err: any) => {
       console.error(SPFXPREFIX, "Error while awaiting all app assets to load", err);
     });
   }
@@ -427,7 +428,8 @@ export default class SpfxExtensionloaderWebPart extends BaseClientSideWebPart<IS
                   domElement,
                 }
               );
-            }).catch((err) => {
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            }).catch((err: any) => {
               console.error(SPFXPREFIX, "Error while awaiting app to load", err);
             });
           }
@@ -485,16 +487,16 @@ export default class SpfxExtensionloaderWebPart extends BaseClientSideWebPart<IS
   //   if (!!this.context.sdks.microsoftTeams) { // running in Teams, office.com or Outlook
   //     return this.context.sdks.microsoftTeams.teamsJs.app.getContext()
   //       .then(context => {
-  //         let environmentMessage: string = '';
+  //         let environmentMessage: string = "";
   //         switch (context.app.host.name) {
-  //           case 'Office': // running in Office
+  //           case "Office": // running in Office
   //             environmentMessage = this.context.isServedFromLocalhost ? strings.AppLocalEnvironmentOffice : strings.AppOfficeEnvironment;
   //             break;
-  //           case 'Outlook': // running in Outlook
+  //           case "Outlook": // running in Outlook
   //             environmentMessage = this.context.isServedFromLocalhost ? strings.AppLocalEnvironmentOutlook : strings.AppOutlookEnvironment;
   //             break;
-  //           case 'Teams': // running in Teams
-  //           case 'TeamsModern':
+  //           case "Teams": // running in Teams
+  //           case "TeamsModern":
   //             environmentMessage = this.context.isServedFromLocalhost ? strings.AppLocalEnvironmentTeams : strings.AppTeamsTabEnvironment;
   //             break;
   //           default:
@@ -519,15 +521,15 @@ export default class SpfxExtensionloaderWebPart extends BaseClientSideWebPart<IS
     } = currentTheme;
 
     if (semanticColors) {
-      this.domElement.style.setProperty('--bodyText', semanticColors.bodyText || null);
-      this.domElement.style.setProperty('--link', semanticColors.link || null);
-      this.domElement.style.setProperty('--linkHovered', semanticColors.linkHovered || null);
+      this.domElement.style.setProperty("--bodyText", semanticColors.bodyText || null);
+      this.domElement.style.setProperty("--link", semanticColors.link || null);
+      this.domElement.style.setProperty("--linkHovered", semanticColors.linkHovered || null);
     }
 
   }
 
   protected get dataVersion(): Version {
-    return Version.parse('1.0');
+    return Version.parse("1.0");
   }
 
 

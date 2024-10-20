@@ -5,7 +5,7 @@
       "name": "Hosted workbench",
       "type": "msedge",
       "request": "launch",
-      "url": "https://{tenantDomain}/_layouts/workbench.aspx",
+      "url": "https://8s2kdn.sharepoint.com/_layouts/workbench.aspx",
       "webRoot": "${workspaceRoot}",
       "sourceMaps": true,
       "sourceMapPathOverrides": {

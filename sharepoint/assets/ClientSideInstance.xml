@@ -3,7 +3,7 @@
     <ClientSideComponentInstance
         Title="SpFxExtensionsCustomizer"
         Location="ClientSideExtension.ApplicationCustomizer"
-        ComponentId="84aeb4f6-4f59-4cb8-81fc-5f14313a4427"
-        Properties="{&quot;testMessage&quot;:&quot;Test message&quot;}">
+        ComponentId="8d1029da-85e6-48cc-aaaf-37a5bbc0b9be"
+        Properties="">
     </ClientSideComponentInstance>
 </Elements>
