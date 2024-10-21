@@ -3,7 +3,6 @@ import {
   BaseApplicationCustomizer
 } from '@microsoft/sp-application-base';
 //import * as strings from 'SpfxExtensionApplicationCustomizerStrings';
-import { initCore } from '../../services/initCoreService';
 
 /**
  * If your command set uses the ClientSideComponentProperties JSON input,
@@ -24,6 +23,8 @@ export default class SpfxExtensionApplicationCustomizer
       Environment.type === EnvironmentType.SharePoint
         ? "SharePoint"
         : "ClassicSharePoint";
+    const { initCore } = await import(/* webpackChunkName: "spfx-extension-loader" */"../../services/initCoreService");
+
     //init core then do stuff
     await initCore(
       this.context.pageContext,

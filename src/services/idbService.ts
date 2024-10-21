@@ -1,5 +1,5 @@
 import { DBSchema, openDB } from "idb";
-import { ConfigurationListData } from "spfx-extensions-core";
+import { ConfigurationListData } from "@spfx-extensions/core";
 
 import { SPFXPREFIX } from "../utilities/constants";
 

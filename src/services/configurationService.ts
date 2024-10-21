@@ -1,6 +1,6 @@
 import { CONFIGURATION_LIST_NAME, SPFXPREFIX } from "../utilities/constants";
 import { addOrUpdateManyToCache } from "./idbService";
-import { ConfigurationListData, CoreDefaultConfiguration } from "spfx-extensions-core";
+import { ConfigurationListData, CoreDefaultConfiguration } from "@spfx-extensions/core";
 
 async function ensureConfigurationListDataField(digestValue: string) {
     // /sites/appcatalog/_api/web/lists/GetByTitle('SPFxExtensionsConfiguration')/fields

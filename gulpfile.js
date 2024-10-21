@@ -28,6 +28,43 @@ build.configureWebpack.mergeConfig({
   additionalConfiguration: (generatedConfiguration) => {
     // generatedConfiguration.optimization.usedExports = true;
     //generatedConfiguration.resolve.extensions.push(".ts");
+    generatedConfiguration.output.chunkFilename = "[name]_[contenthash].js";
+    generatedConfiguration.output.environment = {
+      arrowFunction: true,
+      const: true,
+      optionalChaining: true,
+      module: true,
+      templateLiteral: true,
+      destructuring: true,
+      dynamicImport: true,
+      globalThis: true,
+      forOf: true,
+    };
+    generatedConfiguration.optimization.splitChunks = {
+      cacheGroups: {
+        defaultVendors: false,
+      },
+    };
+    generatedConfiguration.module.rules.push({
+      test: /__spfxCore.js/,
+      generator: {
+        filename: "spfx-extension-core_[hash][ext]",
+      },
+      type: "asset/resource",
+    });
+    generatedConfiguration.resolve.alias["__spfxCore.js"] =
+      "@spfx-extensions/core/core";
+
+    // generatedConfiguration.resolve.alias.push({
+
+    // })
+    // generatedConfiguration.experiments = {
+    //   outputModule: true,
+    // };
+    // generatedConfiguration.output.libraryTarget = "commonjs-module";
+    // generatedConfiguration.output.library = {
+    //   type: "commonjs-module",
+    // };
     const definePlugin = generatedConfiguration.plugins.find(
       (p) => p.definitions
     );

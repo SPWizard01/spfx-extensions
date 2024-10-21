@@ -1,4 +1,4 @@
-tsconfig.tsbuildinfo
+*.tsbuildinfo
 # Logs
 logs
 *.log

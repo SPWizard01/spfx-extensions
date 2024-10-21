@@ -2,14 +2,14 @@ import type { PageContext } from "@microsoft/sp-page-context";
 import {
   CompatibleEnvironmentType,
   SPFxExtensionUtilsPlaceHolderProvider,
-} from "spfx-extensions-core";
-import { getClassicDisplayMode, getModernDisplayMode } from "spfx-extensions-core/utils/display";
-import { loadCoreForSPFxOrClassicWrapper } from "spfx-extensions-core/spfx";
+} from "@spfx-extensions/core";
+import { getClassicDisplayMode, getModernDisplayMode } from "@spfx-extensions/core/utils/display";
 import { PlaceholderProvider } from "@microsoft/sp-application-base";
 import { ISPEventObserver } from "@microsoft/sp-core-library";
 import { SPFXPREFIX } from "../utilities/constants";
 import { getAllConfiguration } from "./idbService";
 import { ensureConfigurationList, getConfigurationListData } from "./configurationService";
+import { loadCoreForSPFxOrClassicWrapper } from "@spfx-extensions/core/spfx"
 
 export async function initCore(
   ctx: PageContext,

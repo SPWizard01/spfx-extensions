@@ -1,7 +1,7 @@
 {
   "$schema": "https://developer.microsoft.com/json-schemas/spfx-build/package-solution.schema.json",
   "solution": {
-    "name": "sp-fx-extensions-client-side-solution",
+    "name": "SPFx Extensions",
     "id": "ff36e5d0-f7c7-421d-9e21-0a422626209a",
     "version": "1.0.0.0",
     "includeClientSideAssets": true,
@@ -10,7 +10,7 @@
     "developer": {
       "name": "SPWizard01",
       "websiteUrl": "https://github.com/SPWizard01/spfx-extensions",
-      "privacyUrl": "",
+      "privacyUrl": "https://github.com/SPWizard01/spfx-extensions/blob/main/README.md",
       "termsOfUseUrl": "https://github.com/SPWizard01/spfx-extensions/blob/main/LICENSE",
       "mpnId": "Undefined-1.20.0"
     },
@@ -23,7 +23,7 @@
       },
       "screenshotPaths": [],
       "videoUrl": "",
-      "categories": []
+      "categories": ["Content management", "Productivity", "Site Design"]
     },
     "features": [
       {
@@ -38,7 +38,7 @@
     ]
   },
   "paths": {
-    "zippedPackage": "dist/deploy/solution/sp-fx-extensions.sppkg",
-    "debugDir": "temp/debug"
+    "zippedPackage": "dist/deploy/sp-fx-extensions.sppkg",
+    "debugDir": "dist/debug"
   }
 }

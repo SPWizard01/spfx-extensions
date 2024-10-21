@@ -14,8 +14,7 @@ import type { IReadonlyTheme } from "@microsoft/sp-component-base";
 
 import styles from "./SpfxExtensionloaderWebPart.module.scss";
 //import * as strings from "SpfxExtensionloaderWebPartStrings";
-import { SPFxExtensionAppConfig, SPFxExtensionAppDefinition, SPFxExtensionAppIcon, SPFxExtensionAppInstance, SPFxExtensionAppRuntimeConfig, SPFxExtensionAppSearchableData } from "spfx-extensions-core";
-import { initCore } from "../../services/initCoreService";
+import { SPFxExtensionAppConfig, SPFxExtensionAppDefinition, SPFxExtensionAppIcon, SPFxExtensionAppInstance, SPFxExtensionAppRuntimeConfig, SPFxExtensionAppSearchableData } from "@spfx-extensions/core";
 import { APP_BUTTON_LABEL, EDIT_PAGE_AND_SELECT_WEBPART, SELECT_WEBPART, SPFXPREFIX } from "../../utilities/constants";
 
 export interface ISpfxExtensionloaderWebPartProps extends SPFxExtensionAppSearchableData {
@@ -49,6 +48,7 @@ export default class SpfxExtensionloaderWebPart extends BaseClientSideWebPart<IS
       Environment.type === EnvironmentType.SharePoint
         ? "SharePoint"
         : "ClassicSharePoint";
+    const { initCore } = await import(/* webpackChunkName: "spfx-extension-loader" */"../../services/initCoreService");
     //init core then do stuff;
     await initCore(this.context.pageContext, envType);
     if (this.properties.selectedApp) {
