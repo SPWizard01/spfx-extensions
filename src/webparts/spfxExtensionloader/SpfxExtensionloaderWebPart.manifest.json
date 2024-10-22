@@ -18,11 +18,11 @@
   "preconfiguredEntries": [{
     "groupId": "5c03119e-3074-46fd-976b-c60198311f70", // Advanced
     "group": { "default": "Advanced" },
-    "title": { "default": "spfx-extensionloader" },
-    "description": { "default": "spfx-extensionloader description" },
+    "title": { "default": "SPFx Extension Loader" },
+    "description": { "default": "Allows you to add a custom developed app" },
     "officeFabricIconFontName": "Page",
     "properties": {
-      "description": "spfx-extensionloader"
+      "description": "Select an app to load from the dropdown below"
     }
   }]
 }
