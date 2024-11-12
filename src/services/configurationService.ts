@@ -1,10 +1,40 @@
 import { CONFIGURATION_LIST_NAME, SPFXPREFIX } from "../utilities/constants";
 import { addOrUpdateManyToCache } from "./idbService";
-import { ConfigurationListData, CoreDefaultConfiguration } from "@spfx-extensions/core";
+import { ConfigurationListData, getCoreDefaultConfiguration } from "@spfx-extensions/core";
+
+
+let appCatalogPromiseResolver = (data: string | PromiseLike<string>) => {};
+let appCatalogUrlPromise: Promise<string> | undefined; 
+
+export async function getAppCatalogUrl(baseUrl = "") {
+    if (appCatalogUrlPromise) {
+        return appCatalogUrlPromise;
+    }
+    appCatalogUrlPromise = new Promise<string>((resolve) => {
+        appCatalogPromiseResolver = resolve;
+    });
+    try {
+        const apiResponse = await fetch(`${baseUrl}/_api/SP_TenantSettings_Current`, {
+            headers: {
+                Accept: "application/json;odata=verbose",
+            }
+        })
+        const responseData = await apiResponse.json()
+        const url = responseData.d.CorporateCatalogUrl as string;
+        appCatalogPromiseResolver(url);
+    }
+    catch (err) {
+        console.error(SPFXPREFIX, "Error while getting app catalog url. Trying default /sites/appcatalog", err);
+        const fallBackUrl = `${window.location.origin}/sites/appcatalog`;
+        appCatalogPromiseResolver(fallBackUrl);
+    }
+    return appCatalogUrlPromise;
+}
 
 async function ensureConfigurationListDataField(digestValue: string) {
     // /sites/appcatalog/_api/web/lists/GetByTitle('SPFxExtensionsConfiguration')/fields
-    const fieldsUrl = `/sites/appcatalog/_api/web/lists/GetByTitle('${CONFIGURATION_LIST_NAME}')/fields`;
+    const appCatalogUrl = await getAppCatalogUrl();
+    const fieldsUrl = `${appCatalogUrl}/_api/web/lists/GetByTitle('${CONFIGURATION_LIST_NAME}')/fields`;
     try {
         const req = await fetch(
             fieldsUrl,
@@ -28,7 +58,7 @@ async function ensureConfigurationListDataField(digestValue: string) {
             if (!titleField.EnforceUniqueValues) {
                 // Update the Title field
                 const updateFieldReq = await fetch(
-                    `/sites/appcatalog/_api/web/lists/GetByTitle('${CONFIGURATION_LIST_NAME}')/fields('${titleField.Id}')`,
+                    `${appCatalogUrl}/_api/web/lists/GetByTitle('${CONFIGURATION_LIST_NAME}')/fields('${titleField.Id}')`,
                     {
                         method: "POST",
                         headers: {
@@ -89,9 +119,10 @@ async function ensureConfigurationListDataField(digestValue: string) {
 
 export async function ensureConfigurationList() {
     // /sites/appcatalog/_api/web/lists/GetByTitle('SPFxExtensionsConfiguration')
+    const appCatalogUrl = await getAppCatalogUrl();
     try {
         const req = await fetch(
-            `/sites/appcatalog/_api/web/lists/GetByTitle('${CONFIGURATION_LIST_NAME}')`
+            `${appCatalogUrl}/_api/web/lists/GetByTitle('${CONFIGURATION_LIST_NAME}')`
         );
         const dgst = await getDigest();
         let newList = false;
@@ -140,7 +171,8 @@ export async function ensureConfigurationList() {
 
 
 export async function getConfigurationListData() {
-    const requestUrl = `/sites/appcatalog/_api/web/lists/GetByTitle('${CONFIGURATION_LIST_NAME}')/items?$select=Title,Data`;
+    const appCatalogUrl = await getAppCatalogUrl();
+    const requestUrl = `${appCatalogUrl}/_api/web/lists/GetByTitle('${CONFIGURATION_LIST_NAME}')/items?$select=Title,Data`;
     const config = {
         headers: {
             Accept: "application/json;odata=verbose",
@@ -153,7 +185,7 @@ export async function getConfigurationListData() {
     );
     if (req.status !== 200) {
         console.error(SPFXPREFIX, "Unable to fetch configuration list items.");
-        return CoreDefaultConfiguration.map((c) => ({ ...c, date: new Date().toISOString(), expires: new Date().toISOString() }));
+        return getCoreDefaultConfiguration(appCatalogUrl).map((c) => ({ ...c, date: new Date().toISOString(), expires: new Date().toISOString() }));
     }
     let data = await req.json();
     let results = data.d.results as ConfigurationListData[];
@@ -176,9 +208,11 @@ export async function getConfigurationListData() {
 
 async function ensureDefaultConfigurationListData() {
     const dgst = await getDigest();
-    for (const item of CoreDefaultConfiguration) {
+    const appCatalogUrl = await getAppCatalogUrl();
+
+    for (const item of getCoreDefaultConfiguration(appCatalogUrl)) {
         const addReq = await fetch(
-            `/sites/appcatalog/_api/web/lists/GetByTitle('${CONFIGURATION_LIST_NAME}')/items`, {
+            `${appCatalogUrl}/_api/web/lists/GetByTitle('${CONFIGURATION_LIST_NAME}')/items`, {
             method: "POST",
             headers: {
                 Accept: "application/json;odata=verbose",
@@ -202,8 +236,9 @@ async function ensureDefaultConfigurationListData() {
 }
 
 async function getDigest() {
+    const appCatalogUrl = await getAppCatalogUrl();
     const req = await fetch(
-        "/sites/appcatalog/_api/contextinfo",
+        `${appCatalogUrl}/_api/contextinfo`,
         {
             method: "POST",
             headers: {

@@ -7,8 +7,8 @@ import { getClassicDisplayMode, getModernDisplayMode } from "@spfx-extensions/co
 import { PlaceholderProvider } from "@microsoft/sp-application-base";
 import { ISPEventObserver } from "@microsoft/sp-core-library";
 import { SPFXPREFIX } from "../utilities/constants";
-import { getAllConfiguration } from "./idbService";
-import { ensureConfigurationList, getConfigurationListData } from "./configurationService";
+import { addOrUpdateDataToCache, getAllConfiguration, getConfigByName } from "./idbService";
+import { ensureConfigurationList, getAppCatalogUrl, getConfigurationListData } from "./configurationService";
 import { loadCoreForSPFxOrClassicWrapper } from "@spfx-extensions/core/spfx"
 
 export async function initCore(
@@ -17,6 +17,11 @@ export async function initCore(
   plcHolderProvider?: PlaceholderProvider,
   evtObserver?: ISPEventObserver
 ) {
+  const appCatalog = await getConfigByName("AppCatalogUrl");
+  if (!appCatalog) {
+    const appCatalogUrl = await getAppCatalogUrl(ctx.web.absoluteUrl);
+    await addOrUpdateDataToCache({ Title: "AppCatalogUrl", Data: appCatalogUrl, date: "", expires: "" }, 240);
+  }
   let config = await getAllConfiguration();
   if (!config || config.length === 0) {
     await ensureConfigurationList();
