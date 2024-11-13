@@ -45,16 +45,51 @@ build.configureWebpack.mergeConfig({
         defaultVendors: false,
       },
     };
+
+    // const sourceMapLoaderIndex = generatedConfiguration.module.rules.findIndex(
+    //   (l) => l.use && l.use?.loader?.indexOf("source-map-loader") > -1
+    // );
+    // if (sourceMapLoaderIndex > -1) {
+    //   generatedConfiguration.module.rules.splice(sourceMapLoaderIndex, 1);
+    //   generatedConfiguration.module.rules.push({
+    //     test: /\.js$/,
+    //     enforce: "pre",
+    //     use: [
+    //       {
+    //         loader: "source-map-loader",
+    //         options: {
+    //           filterSourceMappingUrl: (url, resourcePath) => {
+    //             const includeSourceMap =
+    //               resourcePath.indexOf("node_modules") === -1 ||
+    //               url.indexOf("__spfxCore.js") > -1 ||
+    //               url.indexOf("@spfx-extensions/core") > -1 ||
+    //               resourcePath.indexOf("@spfx-extensions/core") > -1;
+    //             return includeSourceMap;
+    //           },
+    //         },
+    //       },
+    //     ],
+    //   });
+    // }
+
     generatedConfiguration.module.rules.push({
-      test: /__spfxCore.js/,
+      test: /__spfxCore\.js$/,
       generator: {
         filename: "spfx-extension-core_[hash][ext]",
       },
       type: "asset/resource",
     });
+    // generatedConfiguration.module.rules.push({
+    //   test: /__spfxCore\.js\.map$/,
+    //   generator: {
+    //     filename: "spfx-extension-core.js[ext]?[hash]",
+    //   },
+    //   type: "asset/resource",
+    // });
     generatedConfiguration.resolve.alias["__spfxCore.js"] =
-      "@spfx-extensions/core/core";
-
+      "@spfx-extensions/core/spfxCoreEntry";
+    // generatedConfiguration.resolve.alias["__spfxCore.js.map"] =
+    //   "@spfx-extensions/core/spfxCoreEntryMap";
     // generatedConfiguration.resolve.alias.push({
 
     // })

@@ -1,9 +1,9 @@
+import { addOrUpdateExtensionConfigs } from "@spfx-extensions/core/idb";
 import { CONFIGURATION_LIST_NAME, SPFXPREFIX } from "../utilities/constants";
-import { addOrUpdateManyToCache } from "./idbService";
 import { ConfigurationListData, getCoreDefaultConfiguration } from "@spfx-extensions/core";
 
 
-let appCatalogPromiseResolver = (data: string | PromiseLike<string>) => {};
+let appCatalogPromiseResolver = (_data: string | PromiseLike<string>) => {};
 let appCatalogUrlPromise: Promise<string> | undefined; 
 
 export async function getAppCatalogUrl(baseUrl = "") {
@@ -202,7 +202,7 @@ export async function getConfigurationListData() {
         data = await req.json();
         results = data.d.results as ConfigurationListData[];
     }
-    await addOrUpdateManyToCache(results);
+    await addOrUpdateExtensionConfigs(results);
     return results;
 }
 
