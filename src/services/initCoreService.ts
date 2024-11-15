@@ -7,8 +7,6 @@ import { getClassicDisplayMode, getModernDisplayMode } from "@spfx-extensions/co
 import { PlaceholderProvider } from "@microsoft/sp-application-base";
 import { ISPEventObserver } from "@microsoft/sp-core-library";
 import { SPFXPREFIX } from "../utilities/constants";
-import { ensureConfigurationList, getAppCatalogUrl, getConfigurationListData } from "./configurationService";
-import { getExtensionConfig, addOrUpdateExtensionConfig, getAllExtensionConfig } from "@spfx-extensions/core/idb"
 import { loadCoreForSPFxOrClassicWrapper } from "./coreLoader";
 
 
@@ -18,20 +16,10 @@ export async function initCore(
   plcHolderProvider?: PlaceholderProvider,
   evtObserver?: ISPEventObserver
 ) {
-  const appCatalog = await getExtensionConfig("AppCatalogUrl");
-  if (!appCatalog) {
-    const appCatalogUrl = await getAppCatalogUrl(ctx.web.absoluteUrl);
-    await addOrUpdateExtensionConfig({ Title: "AppCatalogUrl", Data: appCatalogUrl, date: "", expires: "" }, 240);
-  }
-  let config = await getAllExtensionConfig();
-  if (!config || config.length < 2) {
-    await ensureConfigurationList();
-    config = await getConfigurationListData();
-  }
   if (!window.__SPFxExtensions) {
     //eslint-disable-next-line @typescript-eslint/no-explicit-any
     (window.__SPFxExtensions as any) = {
-      __CoreConfig: config,
+      __CoreConfig: {},
     };
   }
   if (!window.__SPFxExtensions.Utils) {
@@ -69,6 +57,7 @@ export async function initCore(
       displayMode: initDispMode,
       initedThroughModern: true,
       fluentIconsInitialized: false,
+      ConfiguratorUrl: "",
     };
   }
 

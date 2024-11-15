@@ -5,6 +5,7 @@ import {
   IPropertyPaneDropdownOption,
   IPropertyPaneDropdownProps,
   IPropertyPaneField,
+  PropertyPaneButton,
   PropertyPaneDropdown,
   PropertyPaneFieldType,
   PropertyPaneLabel
@@ -30,7 +31,7 @@ export default class SpfxExtensionloaderWebPart extends BaseClientSideWebPart<IS
 
   SPFxExtensionInstance: SPFxExtensionAppInstance | undefined;
   allApps: IPropertyPaneDropdownOption[] = [];
-
+  appCatalogUrl = "/sites/appcatalog";
   dropDownProps: Partial<IPropertyPaneDropdownProps> = {
     options: [],
     selectedKey: "",
@@ -51,6 +52,7 @@ export default class SpfxExtensionloaderWebPart extends BaseClientSideWebPart<IS
     const { initCore } = await import(/* webpackChunkName: "spfx-extension-loader" */"../../services/initCoreService");
     //init core then do stuff;
     await initCore(this.context.pageContext, envType);
+    this.appCatalogUrl = window.__SPFxExtensions.Utils.ConfiguratorUrl;
     if (this.properties.selectedApp) {
       this.mountApp(this.properties.selectedApp).catch((err) => {
         console.error(SPFXPREFIX, "Error while mounting appid", this.properties.selectedApp, err);
@@ -91,6 +93,7 @@ export default class SpfxExtensionloaderWebPart extends BaseClientSideWebPart<IS
       }
       // if new app was selected, mount it
       if (newValue) {
+        this.webpartSectionElement.remove();
         this.mountApp(newValue).catch((err) => {
           console.error(SPFXPREFIX, "Error while mounting appid", newValue, err);
         });
@@ -261,6 +264,7 @@ export default class SpfxExtensionloaderWebPart extends BaseClientSideWebPart<IS
 
     appButtonElement.addEventListener("click", () => {
       this.properties.selectedApp = app.id;
+      this.webpartSectionElement.remove();
       this.mountApp(app.id).catch((err) => {
         console.error(SPFXPREFIX, "Error while mounting app", app, err);
       });
@@ -386,7 +390,7 @@ export default class SpfxExtensionloaderWebPart extends BaseClientSideWebPart<IS
       // Clear dropdown options in propertypane
       this.dropDownProps.options?.splice(0, this.dropDownProps.options?.length);
 
-      const appOptionsInDropdown = window.__SPFxExtensions.Apps.filter(
+      const appOptionsInDropdown: IPropertyPaneDropdownOption[] = window.__SPFxExtensions.Apps.filter(
         (app) => app.isWebPartApp
       ).map((app) => {
         return {
@@ -451,6 +455,20 @@ export default class SpfxExtensionloaderWebPart extends BaseClientSideWebPart<IS
       pages: [
         {
           groups: [
+            {
+              groupFields:[
+                PropertyPaneLabel("spfxExtensionLoaderLabel", {
+                  text: `App not working? Try refreshing the page. Or go to the configuration page.`,
+                }),
+                PropertyPaneButton("configuratorButton", {
+                  text: "Open Configurator",
+                  buttonType: 1,
+                  onClick: () => {
+                    window.open(`${this.appCatalogUrl}?web=${this.context.pageContext.web.absoluteUrl}`, "_blank");
+                  }
+                })
+              ]
+            },
             ...(this.hideAppSelectorWhenAppLoaded
               ? []
               : [
