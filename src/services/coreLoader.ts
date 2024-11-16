@@ -1,3 +1,5 @@
+import { SPFXPREFIX } from "../utilities/constants";
+
 /**
  * Points to core location, the holy grail that makes everything working.
  * Setting `localStorage["SPFXEXT"]` to a number i.e. `33343` makes it load
@@ -7,20 +9,32 @@
  */
 export async function getRootCoreLocation() {
     const devPort = Number(localStorage.getItem("SPFXEXT"));
+    const coreUrls = {
+      core: "",
+      configuratorUrl: ""
+    }
     if (devPort > 0) {
-      return `https://localhost:${devPort}/__spfxCore.js`;
+      coreUrls.core = `https://localhost:${devPort}/__spfxCore.js`;
+      coreUrls.configuratorUrl = `https://localhost:${devPort}/__spfxCoreConfigurator.js`;
+      return coreUrls;
     }
   
     // this part is intercepted by SPFx Webpack and converted later on
-    const webpackCoreUrl = await import(/* webpackChunkName: "spfx-extension-core-location" */"__spfxCore.js");
+    const coreUrl = await import(/* webpackChunkName: "spfx-extension-core-location" */"__spfxCore.js");
+    const configuratorUrl = await import(/* webpackChunkName: "spfx-extension-core-location" */"__spfxCoreConfigurator.js");
     //side effect for core map to be included in the build
     //import(/* webpackChunkName: "spfx-extension-core-location" */"__spfxCore.js.map").catch(() => {});
-    if (!webpackCoreUrl.default) {
+    if (!coreUrl.default) {
       const msg = "Unable to resolve SPFx Core location";
-      console.error(msg, webpackCoreUrl);
-      throw new Error(msg);
+      throw new Error(`${SPFXPREFIX} ${msg}`);
     }
-    return webpackCoreUrl.default;
+    if (!configuratorUrl.default) {
+      const msg = "Unable to resolve SPFx Core Configurator location";
+      throw new Error(`${SPFXPREFIX} ${msg}`);
+    }
+    coreUrls.core = coreUrl.default;
+    coreUrls.configuratorUrl = configuratorUrl.default;
+    return coreUrls;
   }
   
   /**
@@ -32,13 +46,15 @@ export async function getRootCoreLocation() {
       return window.__SPFxExtensions.__CorePromise;
     }
     const coreUrl = await getRootCoreLocation();
+    window.__SPFxExtensions.__ConfiguratorUrl = coreUrl.configuratorUrl;
     window.__SPFxExtensions.__CorePromise = new Promise((resolve) => {
       window.__SPFxExtensions.__CorePromiseResolver = resolve;
       const coreScript = document.createElement("script");
-      coreScript.src = coreUrl;
+      coreScript.src = coreUrl.core;
       coreScript.type = "module";
       coreScript.addEventListener("error", (err) => {
         console.error(
+          SPFXPREFIX,
           "Catastrophic failure, cannot load SPFxExtensions Core from",
           coreUrl,
           err

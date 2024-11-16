@@ -79,6 +79,13 @@ build.configureWebpack.mergeConfig({
       },
       type: "asset/resource",
     });
+    generatedConfiguration.module.rules.push({
+      test: /__spfxCoreConfigurator\.js$/,
+      generator: {
+        filename: "spfx-extension-coreconfigurator_[hash][ext]",
+      },
+      type: "asset/resource",
+    });
     // generatedConfiguration.module.rules.push({
     //   test: /__spfxCore\.js\.map$/,
     //   generator: {
@@ -88,6 +95,8 @@ build.configureWebpack.mergeConfig({
     // });
     generatedConfiguration.resolve.alias["__spfxCore.js"] =
       "@spfx-extensions/core/spfxCoreEntry";
+      generatedConfiguration.resolve.alias["__spfxCoreConfigurator.js"] =
+      "@spfx-extensions/core/configurator";
     // generatedConfiguration.resolve.alias["__spfxCore.js.map"] =
     //   "@spfx-extensions/core/spfxCoreEntryMap";
     // generatedConfiguration.resolve.alias.push({

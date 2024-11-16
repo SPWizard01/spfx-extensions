@@ -62,9 +62,20 @@ export default class SpfxExtensionloaderWebPart extends BaseClientSideWebPart<IS
 
   protected onPropertyPaneConfigurationComplete(): void {
     const isPaneOpen = this.context.propertyPane.isPropertyPaneOpen();
+
     // notify close only if the pane is not open
     // complete event fires also when config is saved
+//     This event method is invoked in the following cases:
+
+// When the CONFIGURATION_COMPLETE_TIMEOUT((currently the value is 5 secs) elapses after the last change.
+
+// When user clicks the "X" (close) button before the CONFIGURATION_COMPLETE_TIMEOUT elapses.
+
+// When user clicks the 'Apply' button before the CONFIGURATION_COMPLETE_TIMEOUT elapses.
+
+// When the user switches web parts then the current web part gets this event.
     if (!isPaneOpen && this.SPFxExtensionInstance) {
+      
       this.SPFxExtensionInstance.executeListeners(
         "onConfigurationClose",
         undefined
@@ -190,10 +201,10 @@ export default class SpfxExtensionloaderWebPart extends BaseClientSideWebPart<IS
       this.appDescription = newApp.description;
       //spfx specific, for some reason refresh does not work properly (custom field is not rerendered)
       // this.context.propertyPane.refresh();
-      if (this.context.propertyPane.isPropertyPaneOpen()) {
-        this.context.propertyPane.close();
-        this.context.propertyPane.open();
-      }
+      // if (this.context.propertyPane.isPropertyPaneOpen()) {
+      //   this.context.propertyPane.close();
+      //   this.context.propertyPane.open();
+      // }
     }
   }
 
@@ -438,7 +449,7 @@ export default class SpfxExtensionloaderWebPart extends BaseClientSideWebPart<IS
             });
           }
         },
-        onDispose: () => {
+        onDispose: (_domeElement, _context) => {
           if (this.SPFxExtensionInstance) {
             this.SPFxExtensionInstance.executeListeners(
               "onConfigurationClose",
