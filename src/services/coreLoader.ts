@@ -22,8 +22,6 @@ export async function getRootCoreLocation() {
     // this part is intercepted by SPFx Webpack and converted later on
     const coreUrl = await import(/* webpackChunkName: "spfx-extension-core-location" */"__spfxCore.js");
     const configuratorUrl = await import(/* webpackChunkName: "spfx-extension-core-location" */"__spfxCoreConfigurator.js");
-    //side effect for core map to be included in the build
-    //import(/* webpackChunkName: "spfx-extension-core-location" */"__spfxCore.js.map").catch(() => {});
     if (!coreUrl.default) {
       const msg = "Unable to resolve SPFx Core location";
       throw new Error(`${SPFXPREFIX} ${msg}`);
