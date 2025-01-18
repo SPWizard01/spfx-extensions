@@ -1,6 +1,6 @@
 {
   "name": "@spfx-extensions/package",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "private": true,
   "engines": {
     "node": ">=18.17.1 <19.0.0"
@@ -24,8 +24,8 @@
     "@microsoft/sp-office-ui-fabric-core": "1.20.0",
     "@microsoft/sp-property-pane": "1.20.0",
     "@microsoft/sp-webpart-base": "1.20.0",
-    "@spfx-extensions/core": "^0.1.2",
-    "idb": "^8.0.0",
+    "@spfx-extensions/core": "^0.1.5",
+    "idb": "^8.0.1",
     "tslib": "2.3.1"
   },
   "devDependencies": {
@@ -41,6 +41,6 @@
     "eslint": "8.57.0",
     "gulp": "4.0.2",
     "source-map-loader": "^5.0.0",
-    "typescript": "^5.6.3"
+    "typescript": "^5.7.3"
   }
 }

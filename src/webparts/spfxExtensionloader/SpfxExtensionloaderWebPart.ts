@@ -1,10 +1,12 @@
 import { DisplayMode, Environment, EnvironmentType, Version } from "@microsoft/sp-core-library";
 import {
+  IPropertyPaneConditionalGroup,
   type IPropertyPaneConfiguration,
   IPropertyPaneCustomFieldProps,
   IPropertyPaneDropdownOption,
   IPropertyPaneDropdownProps,
   IPropertyPaneField,
+  IPropertyPaneGroup,
   PropertyPaneButton,
   PropertyPaneDropdown,
   PropertyPaneFieldType,
@@ -39,6 +41,7 @@ export default class SpfxExtensionloaderWebPart extends BaseClientSideWebPart<IS
   };
   appDescription = "";
   hideAppSelectorWhenAppLoaded = false;
+  hideConfiguratorButton = false;
   configDomElement: HTMLElement | undefined;
 
   emptyRendered = false;
@@ -65,17 +68,17 @@ export default class SpfxExtensionloaderWebPart extends BaseClientSideWebPart<IS
 
     // notify close only if the pane is not open
     // complete event fires also when config is saved
-//     This event method is invoked in the following cases:
+    //     This event method is invoked in the following cases:
 
-// When the CONFIGURATION_COMPLETE_TIMEOUT((currently the value is 5 secs) elapses after the last change.
+    // When the CONFIGURATION_COMPLETE_TIMEOUT((currently the value is 5 secs) elapses after the last change.
 
-// When user clicks the "X" (close) button before the CONFIGURATION_COMPLETE_TIMEOUT elapses.
+    // When user clicks the "X" (close) button before the CONFIGURATION_COMPLETE_TIMEOUT elapses.
 
-// When user clicks the 'Apply' button before the CONFIGURATION_COMPLETE_TIMEOUT elapses.
+    // When user clicks the 'Apply' button before the CONFIGURATION_COMPLETE_TIMEOUT elapses.
 
-// When the user switches web parts then the current web part gets this event.
+    // When the user switches web parts then the current web part gets this event.
     if (!isPaneOpen && this.SPFxExtensionInstance) {
-      
+
       this.SPFxExtensionInstance.executeListeners(
         "onConfigurationClose",
         undefined
@@ -396,6 +399,7 @@ export default class SpfxExtensionloaderWebPart extends BaseClientSideWebPart<IS
         this.appDescription = selectedApp.description;
         this.hideAppSelectorWhenAppLoaded =
           selectedApp.hideAppSelectorWhenAppLoaded ?? false;
+        this.hideConfiguratorButton = selectedApp.hideConfiguratorButton ?? false;
       }
 
       // Clear dropdown options in propertypane
@@ -462,41 +466,43 @@ export default class SpfxExtensionloaderWebPart extends BaseClientSideWebPart<IS
   }
 
   protected getPropertyPaneConfiguration(): IPropertyPaneConfiguration {
+    const configuratorButton: IPropertyPaneGroup | IPropertyPaneConditionalGroup = {
+      groupFields: [
+        PropertyPaneLabel("spfxExtensionLoaderLabel", {
+          text: `App not working? Try refreshing the page. Or go to the configuration page.`,
+        }),
+        PropertyPaneButton("configuratorButton", {
+          text: "Open Configurator",
+          buttonType: 1,
+          onClick: () => {
+            window.open(`${this.appCatalogUrl}?web=${this.context.pageContext.web.absoluteUrl}`, "_blank");
+          }
+        })
+      ]
+    };
+    const cfgButtonGroup = this.hideConfiguratorButton ? [] : [configuratorButton];
+
+    const appSelector: IPropertyPaneGroup | IPropertyPaneConditionalGroup = {
+      groupFields: [
+        PropertyPaneDropdown("selectedApp", {
+          label: "App",
+          disabled: this.dropDownProps.disabled,
+          options: this.dropDownProps.options,
+          selectedKey: this.dropDownProps.selectedKey,
+        }),
+        PropertyPaneLabel("selectedAppDecription", {
+          text: this.appDescription,
+        }),
+      ],
+    }
+    const cfgAppSelector = this.hideAppSelectorWhenAppLoaded ? [] : [appSelector];
+
     return {
       pages: [
         {
           groups: [
-            {
-              groupFields:[
-                PropertyPaneLabel("spfxExtensionLoaderLabel", {
-                  text: `App not working? Try refreshing the page. Or go to the configuration page.`,
-                }),
-                PropertyPaneButton("configuratorButton", {
-                  text: "Open Configurator",
-                  buttonType: 1,
-                  onClick: () => {
-                    window.open(`${this.appCatalogUrl}?web=${this.context.pageContext.web.absoluteUrl}`, "_blank");
-                  }
-                })
-              ]
-            },
-            ...(this.hideAppSelectorWhenAppLoaded
-              ? []
-              : [
-                {
-                  groupFields: [
-                    PropertyPaneDropdown("selectedApp", {
-                      label: "App",
-                      disabled: this.dropDownProps.disabled,
-                      options: this.dropDownProps.options,
-                      selectedKey: this.dropDownProps.selectedKey,
-                    }),
-                    PropertyPaneLabel("selectedAppDecription", {
-                      text: this.appDescription,
-                    }),
-                  ],
-                },
-              ]),
+            ...cfgButtonGroup,
+            ...cfgAppSelector,
             {
               groupFields: [
                 this.CustomWebpartConfigurationField(
