@@ -14,8 +14,9 @@ export async function getRootCoreLocation() {
     configuratorUrl: ""
   }
   if (devPort > 0) {
-    coreUrls.core = `https://localhost:${devPort}/__spfxCore.js`;
-    coreUrls.configuratorUrl = `https://localhost:${devPort}/__spfxCoreConfigurator.js`;
+    const t = Date.now();
+    coreUrls.core = `https://localhost:${devPort}/__spfxCore.js?v=${t}`;
+    coreUrls.configuratorUrl = `https://localhost:${devPort}/__spfxCoreConfigurator.js?v=${t}`;
     return coreUrls;
   }
 
