@@ -27,7 +27,6 @@ export default class SpfxExtensionApplicationCustomizer
 
     //init core then do stuff
     await initCore(
-      this.context.pageContext,
       envType,
       this.context.placeholderProvider,
       this

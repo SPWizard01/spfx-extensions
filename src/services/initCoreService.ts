@@ -1,4 +1,3 @@
-import type { PageContext } from "@microsoft/sp-page-context";
 import {
   CompatibleEnvironmentType,
   SPFxExtensionUtilsPlaceHolderProvider,
@@ -11,7 +10,6 @@ import { loadCoreForSPFxOrClassicWrapper } from "./coreLoader";
 
 
 export async function initCore(
-  ctx: PageContext,
   envType: CompatibleEnvironmentType,
   plcHolderProvider?: PlaceholderProvider,
   evtObserver?: ISPEventObserver
@@ -45,8 +43,6 @@ export async function initCore(
         ? getClassicDisplayMode()
         : getModernDisplayMode();
     window.__SPFxExtensions.Utils = {
-      //eslint-disable-next-line @typescript-eslint/no-explicit-any
-      context: ctx as any,
       environmentType: envType,
       placeHolderProviderPromise: promise,
       placeHolderResolver: resolver!,
@@ -63,8 +59,6 @@ export async function initCore(
 
   //only repopulate if these were not initialized through modern context
   if (window.__SPFxExtensions.Utils && !window.__SPFxExtensions.Utils.initedThroughModern) {
-    //eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (window.__SPFxExtensions.Utils.context = ctx as any);
     (window.__SPFxExtensions.Utils.environmentType = envType);
     window.__SPFxExtensions.Utils.initedThroughModern = true;
   }

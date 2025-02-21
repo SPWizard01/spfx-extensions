@@ -54,7 +54,7 @@ export default class SpfxExtensionloaderWebPart extends BaseClientSideWebPart<IS
         : "ClassicSharePoint";
     const { initCore } = await import(/* webpackChunkName: "spfx-extension-loader" */"../../services/initCoreService");
     //init core then do stuff;
-    await initCore(this.context.pageContext, envType);
+    await initCore(envType);
     this.appCatalogUrl = window.__SPFxExtensions.Utils.ConfiguratorUrl;
     if (this.properties.selectedApp) {
       this.mountApp(this.properties.selectedApp).catch((err) => {
