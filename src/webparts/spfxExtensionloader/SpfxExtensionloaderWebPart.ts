@@ -440,7 +440,7 @@ export default class SpfxExtensionloaderWebPart extends BaseClientSideWebPart<IS
           this.configDomElement = domElement;
           if (this.SPFxExtensionInstance) {
             // when app instance is loaded forward the render event
-            this.SPFxExtensionInstance.whenLoad.then(() => {
+            this.SPFxExtensionInstance.instanceLoadPromise.then(() => {
               this.SPFxExtensionInstance?.executeListeners(
                 "onConfigurationRender",
                 {

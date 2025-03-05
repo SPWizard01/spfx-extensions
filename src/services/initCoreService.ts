@@ -1,8 +1,9 @@
 import {
   CompatibleEnvironmentType,
   SPFxExtensionUtilsPlaceHolderProvider,
+  getClassicDisplayMode,
+  getModernDisplayMode
 } from "@spfx-extensions/core";
-import { getClassicDisplayMode, getModernDisplayMode } from "@spfx-extensions/core/utils/display";
 import { PlaceholderProvider } from "@microsoft/sp-application-base";
 import { ISPEventObserver } from "@microsoft/sp-core-library";
 import { SPFXPREFIX } from "../utilities/constants";
