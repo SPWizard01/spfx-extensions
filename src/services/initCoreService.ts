@@ -7,7 +7,7 @@ import {
 import { PlaceholderProvider } from "@microsoft/sp-application-base";
 import { ISPEventObserver } from "@microsoft/sp-core-library";
 import { SPFXPREFIX } from "../utilities/constants";
-import { loadCoreForSPFxOrClassicWrapper } from "./coreLoader";
+import { loadCore } from "./coreLoader";
 
 
 export async function initCore(
@@ -25,19 +25,8 @@ export async function initCore(
     const buildDate = BUILD_DATE;
     console.info(SPFXPREFIX, "Initializing Core from SPFx Built:", buildDate);
 
-    let resolver: (obj: SPFxExtensionUtilsPlaceHolderProvider) => void;
-
-    const promise = new Promise<SPFxExtensionUtilsPlaceHolderProvider>((resolve) => {
-      resolver = resolve;
-    });
-
-    let spAppInitializationPromiseResolver = () => {
-      // This does nothing. Comment to avoid eslint error
-    };
-
-    const spAppInitializationPromise = new Promise<void>((resolve) => {
-      spAppInitializationPromiseResolver = resolve;
-    });
+    const { promise: placeHolderProviderPromise, resolve: placeHolderResolver } = Promise.withResolvers<SPFxExtensionUtilsPlaceHolderProvider>();
+    const { promise: spAppInitializationPromise, resolve: spAppInitializationPromiseResolver } = Promise.withResolvers<void>();
 
     const initDispMode =
       envType === "ClassicSharePoint"
@@ -45,8 +34,8 @@ export async function initCore(
         : getModernDisplayMode();
     window.__SPFxExtensions.Utils = {
       environmentType: envType,
-      placeHolderProviderPromise: promise,
-      placeHolderResolver: resolver!,
+      placeHolderProviderPromise,
+      placeHolderResolver,
       appManifestPromises: [],
       spAppInitializationPromise,
       spAppInitializationPromiseResolver,
@@ -77,5 +66,5 @@ export async function initCore(
       eventObserver: evtObserver as any,
     });
   }
-  return loadCoreForSPFxOrClassicWrapper();
+  return loadCore();
 }

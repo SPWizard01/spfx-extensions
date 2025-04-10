@@ -1,7 +1,7 @@
 {
   "extends": "./node_modules/@microsoft/rush-stack-compiler-4.7/includes/tsconfig-web.json",
   "compilerOptions": {
-    "target": "ES2022",
+    "target": "ESNext",
     "forceConsistentCasingInFileNames": true,
     "module": "esnext",
     "moduleResolution": "Bundler",
@@ -18,7 +18,7 @@
     "esModuleInterop": true,
     "typeRoots": ["./node_modules/@types", "./node_modules/@microsoft"],
     "types": ["webpack-env"],
-    "lib": ["ES2022", "DOM"]
+    "lib": ["ESNext", "DOM"]
   },
   "include": ["src/**/*.ts", "src/**/*.tsx"]
 }

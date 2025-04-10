@@ -195,7 +195,7 @@ export default class SpfxExtensionloaderWebPart extends BaseClientSideWebPart<IS
         this.setSearchData(data);
       },
     };
-    this.SPFxExtensionInstance = await window.__SPFxExtensions.LoadApp(appId, runTimeConfig);
+    this.SPFxExtensionInstance = await window.__SPFxExtensions.InstantiateApp(appId, runTimeConfig);
     if (!this.SPFxExtensionInstance) {
       return;
     }

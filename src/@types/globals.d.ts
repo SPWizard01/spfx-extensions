@@ -8,8 +8,3 @@ declare module "__spfxCoreConfigurator.js" {
     const content: string;
     export default content;
 }
-
-declare module "__spfxCore.js.map" {
-    const content: string;
-    export default content;
-}
