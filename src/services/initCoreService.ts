@@ -7,8 +7,16 @@ import {
 import { PlaceholderProvider } from "@microsoft/sp-application-base";
 import { ISPEventObserver } from "@microsoft/sp-core-library";
 import { SPFXPREFIX } from "../utilities/constants";
-import { loadCore } from "./coreLoader";
+import { loadCoreForSPFxOrClassic } from "@spfx-extensions/core/spfxLoader"
 
+let placeHolderResolved = false;
+
+async function getSuggestedCoreUrl() {
+  // this part is intercepted by SPFx Webpack and converted later on
+  const coreUrl = await import(/* webpackChunkName: "spfx-extension-core-location" */"__spfxCore.js");
+  const configuratorUrl = await import(/* webpackChunkName: "spfx-extension-core-location" */"__spfxCoreConfigurator.js");
+  return { coreUrl, configuratorUrl };
+}
 
 export async function initCore(
   envType: CompatibleEnvironmentType,
@@ -39,7 +47,6 @@ export async function initCore(
       appManifestPromises: [],
       spAppInitializationPromise,
       spAppInitializationPromiseResolver,
-      placeHolderResolved: false,
       displayMode: initDispMode,
       initedThroughModern: true,
       fluentIconsInitialized: false,
@@ -53,12 +60,8 @@ export async function initCore(
     window.__SPFxExtensions.Utils.initedThroughModern = true;
   }
   //resolve once, i.e. modern webpart was loaded before app customizer
-  if (
-    plcHolderProvider &&
-    evtObserver &&
-    !window.__SPFxExtensions.Utils.placeHolderResolved
-  ) {
-    window.__SPFxExtensions.Utils.placeHolderResolved = true;
+  if (plcHolderProvider && evtObserver && !placeHolderResolved) {
+    placeHolderResolved = true;
     window.__SPFxExtensions.Utils.placeHolderResolver({
       //eslint-disable-next-line @typescript-eslint/no-explicit-any
       placeHolderProvider: plcHolderProvider as any,
@@ -66,5 +69,5 @@ export async function initCore(
       eventObserver: evtObserver as any,
     });
   }
-  return loadCore();
+  return loadCoreForSPFxOrClassic(getSuggestedCoreUrl)
 }
