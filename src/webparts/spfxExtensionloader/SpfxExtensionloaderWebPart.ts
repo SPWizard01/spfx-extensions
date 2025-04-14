@@ -55,7 +55,7 @@ export default class SpfxExtensionloaderWebPart extends BaseClientSideWebPart<IS
     const { initCore } = await import(/* webpackChunkName: "spfx-extension-loader" */"../../services/initCoreService");
     //init core then do stuff;
     await initCore(envType);
-    this.appCatalogUrl = window.__SPFxExtensions.Utils.ConfiguratorUrl;
+    this.appCatalogUrl = window.__SPFxExtensions.Utils.ConfiguratorPageUrl;
     if (this.properties.selectedApp) {
       this.mountApp(this.properties.selectedApp).catch((err) => {
         console.error(SPFXPREFIX, "Error while mounting appid", this.properties.selectedApp, err);
@@ -117,7 +117,6 @@ export default class SpfxExtensionloaderWebPart extends BaseClientSideWebPart<IS
 
   protected onDisplayModeChanged(oldDisplayMode: DisplayMode): void {
     const mode = oldDisplayMode === DisplayMode.Edit ? "Read" : "Edit";
-    window.__SPFxExtensions.Utils.displayMode = mode;
     if (this.SPFxExtensionInstance) {
       this.SPFxExtensionInstance.executeListeners("onDisplayModeChange", mode);
       return;

@@ -75,14 +75,21 @@ build.configureWebpack.mergeConfig({
     generatedConfiguration.module.rules.push({
       test: /__spfxCore\.js$/,
       generator: {
-        filename: "spfx-extension-core_[hash][ext]",
+        filename: "spfx-extension-core[ext]?v=[hash]",
       },
       type: "asset/resource",
     });
     generatedConfiguration.module.rules.push({
       test: /__spfxCoreConfigurator\.js$/,
       generator: {
-        filename: "spfx-extension-coreconfigurator_[hash][ext]",
+        filename: "spfx-extension-coreconfigurator[ext]?v=[hash]",
+      },
+      type: "asset/resource",
+    });
+    generatedConfiguration.module.rules.push({
+      test: /__spfxWrapperClassic\.js$/,
+      generator: {
+        filename: "spfx-extension-wrapper[ext]?v=[hash]",
       },
       type: "asset/resource",
     });
@@ -95,8 +102,10 @@ build.configureWebpack.mergeConfig({
     // });
     generatedConfiguration.resolve.alias["__spfxCore.js"] =
       "@spfx-extensions/core/spfxCoreEntry";
-      generatedConfiguration.resolve.alias["__spfxCoreConfigurator.js"] =
+    generatedConfiguration.resolve.alias["__spfxCoreConfigurator.js"] =
       "@spfx-extensions/core/configurator";
+    generatedConfiguration.resolve.alias["__spfxWrapperClassic.js"] =
+      "@spfx-extensions/core/classicWrapper";
     // generatedConfiguration.resolve.alias["__spfxCore.js.map"] =
     //   "@spfx-extensions/core/spfxCoreEntryMap";
     // generatedConfiguration.resolve.alias.push({

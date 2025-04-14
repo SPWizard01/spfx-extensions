@@ -1,4 +1,3 @@
-import { Environment, EnvironmentType } from '@microsoft/sp-core-library';
 import {
   BaseApplicationCustomizer,
   PlaceholderProvider
@@ -20,27 +19,31 @@ export default class SpfxExtensionApplicationCustomizer
   extends BaseApplicationCustomizer<ISpfxExtensionApplicationCustomizerProperties> {
 
   public async onInit(): Promise<void> {
-    const envType =
-      Environment.type === EnvironmentType.SharePoint
-        ? "SharePoint"
-        : "ClassicSharePoint";
     const { initCore } = await import(/* webpackChunkName: "spfx-extension-loader" */"../../services/initCoreService");
     //init core then do stuff
     await initCore(
-      envType,
+      "SharePoint",
       this.context.placeholderProvider,
       this
     );
   }
-  protected onPlaceholdersChanged(placeholderProvider: PlaceholderProvider): void {
+  protected async onPlaceholdersChanged(placeholderProvider: PlaceholderProvider) {
+    const { initCore } = await import(/* webpackChunkName: "spfx-extension-loader" */"../../services/initCoreService");
+    // this fires before onInit
+    await initCore(
+      "SharePoint",
+      this.context.placeholderProvider,
+      this
+    );
     window.__SPFxExtensions.Apps.forEach((app) => {
       app.instances.forEach((instance) => {
         instance.executeListeners("onPlaceholdersChanged", placeholderProvider)
       });
     });
+
   }
   protected onDispose(): void {
-    window.__SPFxExtensions.Apps.forEach((app) => {
+    window.__SPFxExtensions?.Apps?.forEach((app) => {
       app.instances.forEach((instance) => {
         instance.executeListeners("onAppCustomizerDisposed", undefined);
       });
