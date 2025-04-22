@@ -148,7 +148,10 @@ export default class SpfxExtensionloaderWebPart extends BaseClientSideWebPart<IS
     }
   }
 
-  getConfigValue() {
+  getConfigValue(key?: string) {
+    if (key) {
+      return (this.properties[key as keyof ISpfxExtensionloaderWebPartProps] as SPFxExtensionAppConfig | undefined);
+    }
     return this.properties.SPFxExtensionAppConfiguration;
   }
 
@@ -184,8 +187,8 @@ export default class SpfxExtensionloaderWebPart extends BaseClientSideWebPart<IS
       saveConfigValue: (config: SPFxExtensionAppConfig, raise = true) => {
         this.saveConfigValue(config, raise);
       },
-      getConfigValue: () => {
-        return this.getConfigValue();
+      getConfigValue: (key?: string) => {
+        return this.getConfigValue(key);
       },
       getSearchableData: () => {
         return this.getSearchData();
@@ -218,7 +221,7 @@ export default class SpfxExtensionloaderWebPart extends BaseClientSideWebPart<IS
           "Unmounting app",
           this.SPFxExtensionInstance.key,
           "at",
-          this.SPFxExtensionInstance.element
+          this.SPFxExtensionInstance.domElement
         );
       }
       this.SPFxExtensionInstance.unmount();
