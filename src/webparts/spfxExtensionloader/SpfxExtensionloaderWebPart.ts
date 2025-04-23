@@ -321,7 +321,7 @@ export default class SpfxExtensionloaderWebPart extends BaseClientSideWebPart<IS
       }
     });
 
-    window.__SPFxExtensions.Apps.filter((app) => app.name !== "Loading...").forEach(
+    window.__SPFxExtensions.Apps.filter((app) => app.registrationCompleted).forEach(
       (app) => {
         if (app.isWebPartApp) {
           this.createAndAppendAppButtons(app);
