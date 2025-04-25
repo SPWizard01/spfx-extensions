@@ -27,4 +27,15 @@ jobs:
         npm install
         gulp bundle --ship
         gulp package-solution --ship
-   
+    - name: Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: spfx-solution
+        path: ./dist/deploy/sp-fx-extensions.sppkg
+    - name: Release
+      uses: softprops/action-gh-release@v2
+      if: github.ref_type == 'tag'
+      with:
+        make_latest: true
+        files: |
+          ./dist/deploy/sp-fx-extensions.sppkg
