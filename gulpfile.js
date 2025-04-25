@@ -25,6 +25,10 @@ build.tscCmd.executeTask = function () {
 };
 
 build.configureWebpack.mergeConfig({
+  //https://github.com/SharePoint/sp-dev-docs/issues/10205
+  generateCssClassName: (name) => {
+    return name;
+  },
   additionalConfiguration: (generatedConfiguration) => {
     // generatedConfiguration.optimization.usedExports = true;
     //generatedConfiguration.resolve.extensions.push(".ts");
@@ -45,7 +49,6 @@ build.configureWebpack.mergeConfig({
         defaultVendors: false,
       },
     };
-
     // const sourceMapLoaderIndex = generatedConfiguration.module.rules.findIndex(
     //   (l) => l.use && l.use?.loader?.indexOf("source-map-loader") > -1
     // );
