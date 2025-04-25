@@ -45,7 +45,7 @@ export default class SpfxExtensionloaderWebPart extends BaseClientSideWebPart<IS
   configDomElement: HTMLElement | undefined;
 
   emptyRendered = false;
-  _isDarkTheme: boolean;
+  _isDarkTheme: boolean = false;
 
   public async onInit() {
     const envType =
