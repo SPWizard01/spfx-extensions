@@ -8,6 +8,7 @@ on:
 
 jobs:
   build:
+    name: Build and Release
     runs-on: ubuntu-latest
 
     strategy:
@@ -44,7 +45,7 @@ jobs:
           files: "**/package-solution.json"
           key-value-pairs: |
             solution.version=${{ steps.autotag.outputs.tag }}.0
-            solution.features[0].version=${{ steps.autotag.outputs.tag }}.0
+            solution.features.0.version=${{ steps.autotag.outputs.tag }}.0
 
       - name: Replace values in package JSON
         uses: tnikFi/json-file-transform@v1
