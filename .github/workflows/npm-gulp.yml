@@ -13,7 +13,8 @@ jobs:
     strategy:
       matrix:
         node-version: [22.x]
-
+    permissions:
+      actions: write
     steps:
       - uses: actions/checkout@v4
 
@@ -27,7 +28,8 @@ jobs:
         id: autotag
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # if you don't want to set write permissions use a PAT token
-          WITH_V: true
+          WITH_V: false
+          DEFAULT_BUMP: patch
 
       - name: Replace values in JSON file
         uses: tnikFi/json-file-transform@v1
