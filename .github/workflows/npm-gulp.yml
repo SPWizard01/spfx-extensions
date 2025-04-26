@@ -22,17 +22,19 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
 
-      - uses: butlerlogic/action-autotag@1.0.0
+      - name: Bump version and push tag
+        uses: anothrNick/github-tag-action@v1 # Don't use @master or @v1 unless you're happy to test the latest version
         id: autotag
         env:
-          GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # if you don't want to set write permissions use a PAT token
+          WITH_V: true
 
       - name: Replace values in JSON file
         uses: tnikFi/json-file-transform@v1
         with:
           files: "**/package-solution.json"
           key-value-pairs: |
-            solution.version=${{ steps.autotag.outputs.version }}
+            solution.version=${{ steps.autotag.outputs.tag }}.0
 
       - name: Build
         run: |
@@ -42,14 +44,14 @@ jobs:
 
       - name: Artifact
         uses: actions/upload-artifact@v4
-        if: steps.autotag.outputs.tag != ''
+        if: steps.autotag.outputs.old_tag != ''
         with:
           name: spfx-solution
           path: ./dist/deploy/sp-fx-extensions.sppkg
 
       - name: Release
         uses: softprops/action-gh-release@v2
-        if: steps.autotag.outputs.tag != ''
+        if: steps.autotag.outputs.old_tag != ''
         with:
           make_latest: true
           tag_name: ${{ steps.autotag.outputs.tag }}
