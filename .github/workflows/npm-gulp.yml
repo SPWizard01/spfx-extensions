@@ -39,20 +39,21 @@ jobs:
           echo "tag ${{ steps.autotag.outputs.tag }}"
           echo "part ${{ steps.autotag.outputs.part }}"
 
-      - name: Replace values in solution JSON
-        uses: tnikFi/json-file-transform@v1
-        with:
-          files: "**/package-solution.json"
-          key-value-pairs: |
-            solution.version=${{ steps.autotag.outputs.tag }}.0
-            solution.features.0.version=${{ steps.autotag.outputs.tag }}.0
+      # - name: Replace values in solution JSON
+      #   uses: tnikFi/json-file-transform@v1
+      #   with:
+      #     files: "**/package-solution.json"
+      #     key-value-pairs: |
+      #       solution.version=${{ steps.autotag.outputs.tag }}.0
+      #       solution.features.0.version=${{ steps.autotag.outputs.tag }}.0
 
       - name: Replace values in package JSON
         uses: tnikFi/json-file-transform@v1
+        if: steps.autotag.outputs.old_tag != ''
         with:
           files: "**/package.json"
           key-value-pairs: |
-            version=${{ steps.autotag.outputs.tag }}.0
+            version=${{ steps.autotag.outputs.tag }}
 
       - name: Build
         run: |

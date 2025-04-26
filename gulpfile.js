@@ -1,5 +1,5 @@
 "use strict";
-
+const fs = require("fs");
 const build = require("@microsoft/sp-build-web");
 const { spawnSync } = require("child_process");
 const path = require("path");
@@ -7,6 +7,24 @@ const isProd = process.argv.indexOf("--ship") > -1;
 build.addSuppression(
   `Warning - [sass] The local CSS class 'ms-Grid' is not camelCase and will not be type-safe.`
 );
+
+const projectSolutionPackage = fs.readFileSync(
+  "./config/package-solution.json",
+  { encoding: "utf8" }
+);
+const projectPackage = fs.readFileSync("./package.json", { encoding: "utf8" });
+const projectPackageJson = JSON.parse(projectPackage);
+const projectSolutionPackageJson = JSON.parse(projectSolutionPackage);
+const projectVersion = `${projectPackageJson.version}.0`;
+console.log("Project Version:", projectVersion);
+projectSolutionPackageJson.solution.version = projectVersion;
+projectSolutionPackageJson.solution.features[0].version = projectVersion;
+
+fs.writeFileSync(
+  "./config/package-solution.json",
+  JSON.stringify(projectSolutionPackageJson, null, 2)
+);
+
 // build.addSuppression(
 //   `Warning - [webpack] No webpack config has been provided. Create a webpack.config.js file or call webpack.setConfig({ configPath: null }) in your gulpfile.`
 // );
