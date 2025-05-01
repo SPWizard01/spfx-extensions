@@ -24,7 +24,9 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
-          always-auth: true
+
+      - uses: oven-sh/setup-bun@v2
+        name: Setup Bun
 
       - uses: salsify/action-detect-and-tag-new-version@v2
         id: tagauto
@@ -69,6 +71,6 @@ jobs:
       - name: Release To NPM
         if: steps.tagauto.outputs.previous-version != steps.tagauto.outputs.current-version && steps.tagauto.outputs.current-version != ''
         run: |
-          npm publish
+          bun publish
         env:
           NPM_CONFIG_TOKEN: ${{ secrets.NPM_TOKEN }}
