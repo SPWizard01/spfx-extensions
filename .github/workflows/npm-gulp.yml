@@ -10,50 +10,39 @@ jobs:
   build:
     name: Build and Release
     runs-on: ubuntu-latest
-
+    permissions:
+      contents: write
     strategy:
       matrix:
         node-version: [22.x]
 
     steps:
       - uses: actions/checkout@v4
-
+        with:
+          fetch-depth: 2
       - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
 
-      - name: Bump version and push tag
-        uses: anothrNick/github-tag-action@v1 # Don't use @master or @v1 unless you're happy to test the latest version
-        id: autotag
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # if you don't want to set write permissions use a PAT token
-          WITH_V: false
-          DEFAULT_BUMP: patch
-          VERBOSE: true
+      - uses: salsify/action-detect-and-tag-new-version@v2
+        id: tagauto
+        with:
+          create-tag: true
 
       - name: list tag output
         run: |
-          echo "old ${{ steps.autotag.outputs.old_tag }}"
-          echo "new ${{ steps.autotag.outputs.new_tag }}"
-          echo "tag ${{ steps.autotag.outputs.tag }}"
-          echo "part ${{ steps.autotag.outputs.part }}"
+          echo "previous-version ${{ steps.tagauto.outputs.previous-version }}"
+          echo "current-version ${{ steps.tagauto.outputs.current-version }}"
+          echo "tagautotag ${{ steps.tagauto.outputs.tag }}"
 
-      # - name: Replace values in solution JSON
+      # - name: Replace values in package JSON
       #   uses: tnikFi/json-file-transform@v1
+      #   if: steps.autotag.outputs.old_tag != ''
       #   with:
-      #     files: "**/package-solution.json"
+      #     files: "**/package.json"
       #     key-value-pairs: |
-      #       solution.version=${{ steps.autotag.outputs.tag }}.0
-      #       solution.features.0.version=${{ steps.autotag.outputs.tag }}.0
-
-      - name: Replace values in package JSON
-        uses: tnikFi/json-file-transform@v1
-        if: steps.autotag.outputs.old_tag != ''
-        with:
-          files: "**/package.json"
-          key-value-pairs: |
-            version=${{ steps.autotag.outputs.tag }}
+      #       version=${{ steps.autotag.outputs.tag }}
 
       - name: Build
         run: |
@@ -63,16 +52,22 @@ jobs:
 
       - name: Artifact
         uses: actions/upload-artifact@v4
-        if: steps.autotag.outputs.old_tag != ''
+        if: steps.tagauto.outputs.previous-version != steps.tagauto.outputs.current-version && steps.tagauto.outputs.current-version != ''
         with:
           name: spfx-solution
           path: ./dist/deploy/sp-fx-extensions.sppkg
 
       - name: Release
         uses: softprops/action-gh-release@v2
-        if: steps.autotag.outputs.old_tag != ''
+        if: steps.tagauto.outputs.previous-version != steps.tagauto.outputs.current-version && steps.tagauto.outputs.current-version != ''
         with:
           make_latest: true
-          tag_name: ${{ steps.autotag.outputs.tag }}
+          tag_name: ${{ steps.tagauto.outputs.tag }}
           files: |
             ./dist/deploy/sp-fx-extensions.sppkg
+      - name: Release To NPM
+        if: steps.tagauto.outputs.previous-version != steps.tagauto.outputs.current-version && steps.tagauto.outputs.current-version != ''
+        run: |
+          npm publish
+        env:
+          NPM_CONFIG_TOKEN: ${{ secrets.NPM_TOKEN }}
