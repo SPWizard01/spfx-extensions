@@ -4,6 +4,25 @@ const build = require("@microsoft/sp-build-web");
 const { spawnSync } = require("child_process");
 const path = require("path");
 const isProd = process.argv.indexOf("--ship") > -1;
+const changeNameArg = "--change-name";
+const argvJoined = process.argv.join(" ");
+const changeNameArgIndex = argvJoined.indexOf(changeNameArg);
+const shouldChangeName = changeNameArgIndex > -1;
+const newNameStart = changeNameArgIndex + changeNameArg.length + 1;
+const hasMoreArgsAfterName =
+  argvJoined.substring(newNameStart).indexOf("--") > -1;
+let newName = "";
+if (shouldChangeName) {
+  if (hasMoreArgsAfterName > -1) {
+    newName = argvJoined.substring(
+      newNameStart,
+      argvJoined.length - hasMoreArgsAfterName - changeNameArg.length - 1
+    );
+  } else {
+    newName = argvJoined.substring(newNameStart);
+  }
+}
+
 build.addSuppression(
   `Warning - [sass] The local CSS class 'ms-Grid' is not camelCase and will not be type-safe.`
 );
@@ -25,6 +44,21 @@ fs.writeFileSync(
   JSON.stringify(projectSolutionPackageJson, null, 2)
 );
 
+if (newName) {
+  const jsonPath =
+    "./src/webparts/spfxExtensionloader/SpfxExtensionloaderWebPart.manifest.json";
+  const webpartData = fs.readFileSync(jsonPath, { encoding: "utf8" });
+  const webpartDataJson = JSON.parse(webpartData);
+  const oldName = webpartDataJson.preconfiguredEntries[0].title.default;
+  console.log("Old Webpart Name:", oldName);
+  console.log("New Webpart Name:", newName);
+  webpartDataJson.preconfiguredEntries[0].title.default = newName;
+  fs.writeFileSync(
+    jsonPath,
+    JSON.stringify(webpartDataJson, null, 2)
+  );
+}
+
 // build.addSuppression(
 //   `Warning - [webpack] No webpack config has been provided. Create a webpack.config.js file or call webpack.setConfig({ configPath: null }) in your gulpfile.`
 // );
@@ -44,9 +78,9 @@ build.tscCmd.executeTask = function () {
 
 build.configureWebpack.mergeConfig({
   //https://github.com/SharePoint/sp-dev-docs/issues/10205
-  generateCssClassName: (name) => {
-    return name;
-  },
+  // generateCssClassName: (name) => {
+  //   return name;
+  // },
   additionalConfiguration: (generatedConfiguration) => {
     // generatedConfiguration.optimization.usedExports = true;
     //generatedConfiguration.resolve.extensions.push(".ts");
