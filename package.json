@@ -1,6 +1,6 @@
 {
   "name": "@spfx-extensions/package",
-  "version": "1.4.13",
+  "version": "1.4.14",
   "author": "SPWizard01",
   "access": "public",
   "repository": {
@@ -21,7 +21,17 @@
     "test": "gulp test"
   },
   "files": [
-    "dist"
+    "dist",
+    "config",
+    "sharepoint",
+    "src",
+    "teams",
+    ".npmignore",
+    ".nvmrc",
+    "gulpfile.js",
+    "LICENSE",
+    "README.md",
+    "tsconfig.json"
   ],
   "dependencies": {
     "@microsoft/decorators": "^1.21.1",
