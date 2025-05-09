@@ -9,17 +9,14 @@ const argvJoined = process.argv.join(" ");
 const changeNameArgIndex = argvJoined.indexOf(changeNameArg);
 const shouldChangeName = changeNameArgIndex > -1;
 const newNameStart = changeNameArgIndex + changeNameArg.length + 1;
-const hasMoreArgsAfterName =
-  argvJoined.substring(newNameStart).indexOf("--") > -1;
+const newNameSubstring = argvJoined.substring(newNameStart);
+const hasMoreArgsAfterName = newNameSubstring.indexOf("--");
 let newName = "";
 if (shouldChangeName) {
   if (hasMoreArgsAfterName > -1) {
-    newName = argvJoined.substring(
-      newNameStart,
-      argvJoined.length - hasMoreArgsAfterName - changeNameArg.length - 1
-    );
+    newName = newNameSubstring.substring(0, hasMoreArgsAfterName).trim();
   } else {
-    newName = argvJoined.substring(newNameStart);
+    newName = newNameSubstring.trim();
   }
 }
 
@@ -53,10 +50,7 @@ if (newName) {
   console.log("Old Webpart Name:", oldName);
   console.log("New Webpart Name:", newName);
   webpartDataJson.preconfiguredEntries[0].title.default = newName;
-  fs.writeFileSync(
-    jsonPath,
-    JSON.stringify(webpartDataJson, null, 2)
-  );
+  fs.writeFileSync(jsonPath, JSON.stringify(webpartDataJson, null, 2));
 }
 
 // build.addSuppression(
