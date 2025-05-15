@@ -56,7 +56,7 @@ export default class SpfxExtensionloaderWebPart extends BaseClientSideWebPart<IS
     //init core then do stuff;
     await initCore(envType);
     this.appCatalogUrl = window.__SPFxExtensions.Utils.ConfiguratorPageUrl;
-    if (this.properties.selectedApp) {
+    if (this.properties.selectedApp && !this.SPFxExtensionInstance) {
       this.mountApp(this.properties.selectedApp).catch((err) => {
         console.error(SPFXPREFIX, "Error while mounting appid", this.properties.selectedApp, err);
       });
@@ -226,7 +226,7 @@ export default class SpfxExtensionloaderWebPart extends BaseClientSideWebPart<IS
       }
       this.SPFxExtensionInstance.unmount();
     }
-
+    this.SPFxExtensionInstance = undefined;
     this.properties.SPFxExtensionAppConfiguration = undefined;
   }
 
@@ -352,13 +352,20 @@ export default class SpfxExtensionloaderWebPart extends BaseClientSideWebPart<IS
     });
   }
 
-  public render(): void {
+  public render() {
     // do not uncomment this or this will "erase the webpart when exiting edit mode";
     // required when adding same Webpart while another instance is already open and configuration pane is open as well.
     if (this.context.propertyPane.isPropertyPaneOpen()) {
       this.onPropertyPaneConfigurationStart();
     }
-    if (this.properties.selectedApp) {
+    if (this.properties.selectedApp && this.SPFxExtensionInstance) {
+      return;
+    }
+    if(this.properties.selectedApp && !this.SPFxExtensionInstance) {
+      //might need to be awaited
+      this.mountApp(this.properties.selectedApp).catch((err) => {
+        console.error(SPFXPREFIX, "Error while mounting appid", this.properties.selectedApp, err);
+      });
       return;
     }
 
