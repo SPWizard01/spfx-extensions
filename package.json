@@ -1,6 +1,6 @@
 {
   "name": "@spfx-extensions/package",
-  "version": "1.4.17",
+  "version": "1.4.19",
   "author": "SPWizard01",
   "access": "public",
   "repository": {
@@ -15,6 +15,7 @@
   "scripts": {
     "build": "gulp bundle",
     "clean": "gulp clean",
+    "serve": "gulp serve",
     "prerelease": "gulp clean",
     "release": "gulp bundle --ship",
     "postrelease": "gulp package-solution --ship",

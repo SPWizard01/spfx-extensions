@@ -43,11 +43,12 @@ export default class SpfxExtensionloaderWebPart extends BaseClientSideWebPart<IS
   hideAppSelectorWhenAppLoaded = false;
   hideConfiguratorButton = false;
   configDomElement: HTMLElement | undefined;
-
-  emptyRendered = false;
   _isDarkTheme: boolean = false;
 
   public async onInit() {
+    if (DEBUG) {
+      console.debug(SPFXPREFIX, "onInit");
+    }
     const envType =
       Environment.type === EnvironmentType.SharePoint
         ? "SharePoint"
@@ -56,11 +57,6 @@ export default class SpfxExtensionloaderWebPart extends BaseClientSideWebPart<IS
     //init core then do stuff;
     await initCore(envType);
     this.appCatalogUrl = window.__SPFxExtensions.Utils.ConfiguratorPageUrl;
-    if (this.properties.selectedApp && !this.SPFxExtensionInstance) {
-      this.mountApp(this.properties.selectedApp).catch((err) => {
-        console.error(SPFXPREFIX, "Error while mounting appid", this.properties.selectedApp, err);
-      });
-    }
   }
 
   protected onPropertyPaneConfigurationComplete(): void {
@@ -108,9 +104,7 @@ export default class SpfxExtensionloaderWebPart extends BaseClientSideWebPart<IS
       // if new app was selected, mount it
       if (newValue) {
         this.webpartSectionElement.remove();
-        this.mountApp(newValue).catch((err) => {
-          console.error(SPFXPREFIX, "Error while mounting appid", newValue, err);
-        });
+        this.mountApp(newValue);
       }
     }
   }
@@ -171,50 +165,58 @@ export default class SpfxExtensionloaderWebPart extends BaseClientSideWebPart<IS
     if (ISDEBUG) {
       console.debug(SPFXPREFIX, "Mounting app", appId, "at", this.domElement);
     }
-    const runTimeConfig: SPFxExtensionAppRuntimeConfig = {
-      domElement: this.domElement,
-      //eslint-disable-next-line @typescript-eslint/no-explicit-any
-      webpartContext: this.context as any,
-      openPropertyPane: () => {
-        this.openPropertyPane();
-      },
-      closePropertyPane: () => {
-        this.closePropertyPane();
-      },
-      isPropertyPaneOpen: () => {
-        return this.isPropertyPaneOpen();
-      },
-      saveConfigValue: (config: SPFxExtensionAppConfig, raise = true) => {
-        this.saveConfigValue(config, raise);
-      },
-      getConfigValue: (key?: string) => {
-        return this.getConfigValue(key);
-      },
-      getSearchableData: () => {
-        return this.getSearchData();
-      },
-      setSearchableData: (data: SPFxExtensionAppSearchableData) => {
-        this.setSearchData(data);
-      },
-    };
-    this.SPFxExtensionInstance = await window.__SPFxExtensions.InstantiateApp(appId, runTimeConfig);
-    if (!this.SPFxExtensionInstance) {
-      return;
+    try {
+      const runTimeConfig: SPFxExtensionAppRuntimeConfig = {
+        domElement: this.domElement,
+        //eslint-disable-next-line @typescript-eslint/no-explicit-any
+        webpartContext: this.context as any,
+        openPropertyPane: () => {
+          this.openPropertyPane();
+        },
+        closePropertyPane: () => {
+          this.closePropertyPane();
+        },
+        isPropertyPaneOpen: () => {
+          return this.isPropertyPaneOpen();
+        },
+        saveConfigValue: (config: SPFxExtensionAppConfig, raise = true) => {
+          this.saveConfigValue(config, raise);
+        },
+        getConfigValue: (key?: string) => {
+          return this.getConfigValue(key);
+        },
+        getSearchableData: () => {
+          return this.getSearchData();
+        },
+        setSearchableData: (data: SPFxExtensionAppSearchableData) => {
+          this.setSearchData(data);
+        },
+      };
+      this.SPFxExtensionInstance = await window.__SPFxExtensions.InstantiateApp(appId, runTimeConfig);
+      if (!this.SPFxExtensionInstance) {
+        return;
+      }
+      const newApp = window.__SPFxExtensions.Apps.find((app) => app.id === appId);
+      if (newApp) {
+        this.appDescription = newApp.description;
+        //spfx specific, for some reason refresh does not work properly (custom field is not rerendered)
+        // this.context.propertyPane.refresh();
+        // if (this.context.propertyPane.isPropertyPaneOpen()) {
+        //   this.context.propertyPane.close();
+        //   this.context.propertyPane.open();
+        // }
+      }
+      this.renderCompleted(undefined, true);
     }
-    const newApp = window.__SPFxExtensions.Apps.find((app) => app.id === appId);
-    if (newApp) {
-      this.appDescription = newApp.description;
-      //spfx specific, for some reason refresh does not work properly (custom field is not rerendered)
-      // this.context.propertyPane.refresh();
-      // if (this.context.propertyPane.isPropertyPaneOpen()) {
-      //   this.context.propertyPane.close();
-      //   this.context.propertyPane.open();
-      // }
+    catch (err) {
+      console.error(SPFXPREFIX, "Error while mounting appid", appId, err);
+      const error = new Error(`${err}`);
+      this.renderCompleted(error);
     }
   }
 
   private unmountApp() {
-    if (this.SPFxExtensionInstance && this.SPFxExtensionInstance.unmount) {
+    if (this.SPFxExtensionInstance) {
       if (ISDEBUG) {
         console.debug(
           SPFXPREFIX,
@@ -224,13 +226,17 @@ export default class SpfxExtensionloaderWebPart extends BaseClientSideWebPart<IS
           this.SPFxExtensionInstance.domElement
         );
       }
-      this.SPFxExtensionInstance.unmount();
+      this.SPFxExtensionInstance.unmount?.();
     }
     this.SPFxExtensionInstance = undefined;
     this.properties.SPFxExtensionAppConfiguration = undefined;
+    this.domElement.innerHTML = "";
   }
 
   protected onDispose(): void {
+    if (DEBUG) {
+      console.debug(SPFXPREFIX, "onDispose");
+    }
     this.unmountApp();
   }
 
@@ -278,12 +284,12 @@ export default class SpfxExtensionloaderWebPart extends BaseClientSideWebPart<IS
     appButtonElement.append(icon, app.name);
     appButtonElement.title = app.name;
 
-    appButtonElement.addEventListener("click", () => {
+    appButtonElement.addEventListener("click", (ev) => {
+      ev.stopPropagation();
+      ev.preventDefault();
       this.properties.selectedApp = app.id;
       this.webpartSectionElement.remove();
-      this.mountApp(app.id).catch((err) => {
-        console.error(SPFXPREFIX, "Error while mounting app", app, err);
-      });
+      this.mountApp(app.id);
     });
 
     this.appButtonsContainer.appendChild(appButtonElement);
@@ -305,7 +311,7 @@ export default class SpfxExtensionloaderWebPart extends BaseClientSideWebPart<IS
     this.domElement.appendChild(this.webpartSectionElement);
   }
 
-  renderEditMode() {
+  async renderEditMode() {
     this.webpartSectionElement.ariaLabel = SELECT_WEBPART;
     this.webpartSectionTitle.textContent = SELECT_WEBPART;
     this.createWebpartSection(true);
@@ -328,10 +334,9 @@ export default class SpfxExtensionloaderWebPart extends BaseClientSideWebPart<IS
         }
       }
     );
-
-    window.__SPFxExtensions.Utils.spAppInitializationPromise.then(() => {
+    try {
+      await window.__SPFxExtensions.Utils.spAppInitializationPromise;
       this.domElement.appendChild(this.webpartSectionElement);
-
       window.__SPFxExtensions.Utils.appManifestPromises.forEach((promise) => {
         const buttonLoader = document.createElement("div");
         const loaderSpinner = document.createElement("span");
@@ -347,37 +352,58 @@ export default class SpfxExtensionloaderWebPart extends BaseClientSideWebPart<IS
             buttonLoader.remove();
           });
       });
-    }).catch(() => {
-      // do nothing
-    });
+    }
+    catch (err) {
+      console.error(SPFXPREFIX, "Error while awaiting app initialization", err);
+    }
   }
 
-  public render() {
-    // do not uncomment this or this will "erase the webpart when exiting edit mode";
+  public async render() {
+    // might not be required anymore
+    // initial testing shows that it works without this
     // required when adding same Webpart while another instance is already open and configuration pane is open as well.
-    if (this.context.propertyPane.isPropertyPaneOpen()) {
-      this.onPropertyPaneConfigurationStart();
+    // if (this.context.propertyPane.isPropertyPaneOpen()) {
+    //   this.onPropertyPaneConfigurationStart();
+    // }
+    if (DEBUG) {
+      console.debug(SPFXPREFIX, "render");
     }
+
     if (this.properties.selectedApp && this.SPFxExtensionInstance) {
+      this.renderCompleted();
       return;
     }
-    if(this.properties.selectedApp && !this.SPFxExtensionInstance) {
-      //might need to be awaited
-      this.mountApp(this.properties.selectedApp).catch((err) => {
-        console.error(SPFXPREFIX, "Error while mounting appid", this.properties.selectedApp, err);
-      });
+    if (this.properties.selectedApp && !this.SPFxExtensionInstance) {
+      await this.mountApp(this.properties.selectedApp);
       return;
     }
 
+    if (this.renderedOnce || this.domElement.children.length > 0) {
+      if (DEBUG) {
+        console.debug(SPFXPREFIX, "Already rendered");
+      }
+      return;
+    }
+    if (DEBUG) {
+      console.debug(SPFXPREFIX, "Rendering display or edit mode empty webpart");
+    }
     this.domElement.className = styles.SPFxExtensionApp;
 
     if (this.displayMode === DisplayMode.Read) {
       this.renderDisplayMode();
+    } else {
+      await this.renderEditMode();
     }
 
-    if (this.displayMode === DisplayMode.Edit) {
-      this.renderEditMode();
-    }
+    this.renderCompleted(undefined, true);
+  }
+
+  protected renderCompleted(error?: Error, didUpdate?: boolean): void {
+    super.renderCompleted(error, didUpdate);
+  }
+
+  protected get isRenderAsync() {
+    return true;
   }
 
   protected get propertiesMetadata(): IWebPartPropertiesMetadata {
@@ -398,6 +424,9 @@ export default class SpfxExtensionloaderWebPart extends BaseClientSideWebPart<IS
   }
 
   protected onPropertyPaneConfigurationStart(): void {
+    if (ISDEBUG) {
+      console.debug(SPFXPREFIX, "Property pane configuration start");
+    }
     // wait for all the manifests to load
     window.__SPFxExtensions.AllAppAssetsLoadedPromise.then(() => {
       // register description if an app is matching this webpart

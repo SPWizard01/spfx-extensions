@@ -4,7 +4,8 @@
   "https": true,
   "serveConfigurations": {
     "default": {
-      "pageUrl": "https://8s2kdn.sharepoint.com/SitePages/WebpartWorkbench.aspx",
+      // "pageUrl": "https://8s2kdn.sharepoint.com/sites/newcommsite/SitePages/TopicHome.aspx",
+      "pageUrl": "https://danskebankgroup.sharepoint.com/sites/headlines/SitePages/AI-to-revolutionise-the-credit-process-for-business-customers.aspx",
       "customActions": {
         "8d1029da-85e6-48cc-aaaf-37a5bbc0b9be": {
           "location": "ClientSideExtension.ApplicationCustomizer",
