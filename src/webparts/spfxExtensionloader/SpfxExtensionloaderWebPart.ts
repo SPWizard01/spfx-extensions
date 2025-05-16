@@ -146,7 +146,11 @@ export default class SpfxExtensionloaderWebPart extends BaseClientSideWebPart<IS
 
   getConfigValue(key?: string) {
     if (key) {
-      return (this.properties[key as keyof ISpfxExtensionloaderWebPartProps] as SPFxExtensionAppConfig | undefined);
+      let dataByKey = (this.properties[key as keyof ISpfxExtensionloaderWebPartProps] as SPFxExtensionAppConfig | undefined);
+      if (typeof dataByKey === "undefined") {
+        dataByKey = this.properties.SPFxExtensionAppConfiguration;
+      }
+      return dataByKey;
     }
     return this.properties.SPFxExtensionAppConfiguration;
   }
@@ -167,6 +171,8 @@ export default class SpfxExtensionloaderWebPart extends BaseClientSideWebPart<IS
     if (ISDEBUG) {
       console.debug(SPFXPREFIX, "Mounting app", appId, "at", this.domElement);
     }
+    //clean HTML
+    this.domElement.innerHTML = "";
     try {
       const runTimeConfig: SPFxExtensionAppRuntimeConfig = {
         domElement: this.domElement,
@@ -231,7 +237,6 @@ export default class SpfxExtensionloaderWebPart extends BaseClientSideWebPart<IS
       this.SPFxExtensionInstance.unmount?.();
     }
     this.SPFxExtensionInstance = undefined;
-    this.properties.SPFxExtensionAppConfiguration = undefined;
     this.domElement.innerHTML = "";
   }
 
@@ -373,10 +378,16 @@ export default class SpfxExtensionloaderWebPart extends BaseClientSideWebPart<IS
       console.debug(SPFXPREFIX, "render");
     }
 
-    if (this.properties.selectedApp && this.SPFxExtensionInstance) {
-      this.renderCompleted();
-      return;
+    //in live editing mode dispose is not called when in production build for some reason
+    //we unmount and remount the app if applicable
+    if (this.SPFxExtensionInstance) {
+      if (this.SPFxExtensionInstance.unmountOnRender) {
+        this.unmountApp();
+      } else {
+        this.SPFxExtensionInstance.executeListeners("onRender", undefined);
+      }
     }
+
     if (this.properties.selectedApp && !this.SPFxExtensionInstance) {
       await this.mountApp(this.properties.selectedApp);
       return;
