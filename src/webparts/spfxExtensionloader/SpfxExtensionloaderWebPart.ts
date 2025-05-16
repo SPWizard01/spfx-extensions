@@ -104,7 +104,9 @@ export default class SpfxExtensionloaderWebPart extends BaseClientSideWebPart<IS
       // if new app was selected, mount it
       if (newValue) {
         this.webpartSectionElement.remove();
-        this.mountApp(newValue);
+        this.mountApp(newValue).catch(() => {
+          // do nothing
+        });
       }
     }
   }
@@ -289,7 +291,9 @@ export default class SpfxExtensionloaderWebPart extends BaseClientSideWebPart<IS
       ev.preventDefault();
       this.properties.selectedApp = app.id;
       this.webpartSectionElement.remove();
-      this.mountApp(app.id);
+      this.mountApp(app.id).catch(() => {
+        // do nothing
+      });
     });
 
     this.appButtonsContainer.appendChild(appButtonElement);
