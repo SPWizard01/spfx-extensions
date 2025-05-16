@@ -32,7 +32,7 @@ export default class SpfxExtensionApplicationCustomizer
     // this fires before onInit
     await initCore(
       "SharePoint",
-      this.context.placeholderProvider,
+      placeholderProvider,
       this
     );
     window.__SPFxExtensions.Apps.forEach((app) => {
