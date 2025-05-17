@@ -345,7 +345,7 @@ export default class SpfxExtensionloaderWebPart extends BaseClientSideWebPart<IS
     );
     try {
       await window.__SPFxExtensions.Utils.spAppInitializationPromise;
-      this.domElement.appendChild(this.webpartSectionElement);
+      // this.domElement.appendChild(this.webpartSectionElement);
       window.__SPFxExtensions.Utils.appManifestPromises.forEach((promise) => {
         const buttonLoader = document.createElement("div");
         const loaderSpinner = document.createElement("span");
@@ -367,6 +367,25 @@ export default class SpfxExtensionloaderWebPart extends BaseClientSideWebPart<IS
     }
   }
 
+  async renderEmptyApp() {
+    if (DEBUG) {
+      console.debug(SPFXPREFIX, "Rendering display or edit mode empty webpart");
+    }
+
+    //clean domElement
+    this.domElement.innerHTML = "";
+
+    this.domElement.className = styles.SPFxExtensionApp;
+
+    if (this.displayMode === DisplayMode.Read) {
+      this.renderDisplayMode();
+    } else {
+      await this.renderEditMode();
+    }
+
+    this.renderCompleted(undefined, true);
+  }
+
   public async render() {
     // might not be required anymore
     // initial testing shows that it works without this
@@ -385,6 +404,7 @@ export default class SpfxExtensionloaderWebPart extends BaseClientSideWebPart<IS
         this.unmountApp();
       } else {
         this.SPFxExtensionInstance.executeListeners("onRender", undefined);
+        return;
       }
     }
 
@@ -393,24 +413,7 @@ export default class SpfxExtensionloaderWebPart extends BaseClientSideWebPart<IS
       return;
     }
 
-    if (this.renderedOnce || this.domElement.children.length > 0) {
-      if (DEBUG) {
-        console.debug(SPFXPREFIX, "Already rendered");
-      }
-      return;
-    }
-    if (DEBUG) {
-      console.debug(SPFXPREFIX, "Rendering display or edit mode empty webpart");
-    }
-    this.domElement.className = styles.SPFxExtensionApp;
-
-    if (this.displayMode === DisplayMode.Read) {
-      this.renderDisplayMode();
-    } else {
-      await this.renderEditMode();
-    }
-
-    this.renderCompleted(undefined, true);
+    await this.renderEmptyApp();
   }
 
   protected renderCompleted(error?: Error, didUpdate?: boolean): void {
