@@ -63,9 +63,18 @@ The solution acts as a wrapper around the `@spfx-extensions/core` package, allow
 After successful deployment, you can:
 
 - Navigate to `/sites/appcatalog/SPFxExtensionsData/SitePages/SPFxExtensionsConfigurator.aspx` for global configuration
+![Global configuration](docs/images/configurator.png)
 - Add the SPFx Extensions Loader web part to any SharePoint page
+![Full-width section](docs/images/fullwidthsupport.png)
+- Then configure which app the webpart should load
+![Select an app](docs/images/propertypane.png)
 - Configure applications at different scopes (Global, Hub, Site, Web) as needed
-
+![Add webs](docs/images/sitelist.png)
+- Add webs where you want to add the apps
+![Configure app](docs/images/appconfig.png)
+- Configure the app/upload necessary files
+![Enable app at scope](docs/images/enableapp.png)
+- Enable or disable the app at specific scope
 ## Development Commands
 
 | Command | Description |
