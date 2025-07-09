@@ -1,38 +1,26 @@
-# sp-fx-extensions
+# SPFx Extensions Framework
 
 ## Summary
 
-Short summary on functionality and used technologies.
+A SharePoint Framework (SPFx) extension solution that provides a framework-agnostic wrapper for building modern SharePoint applications. This solution contains both a web part and an application customizer that can be installed tenant-wide, enabling developers to break free from the traditional SPFx ecosystem limitations.
 
-[picture of the solution in action, if possible]
+The solution acts as a wrapper around the `@spfx-extensions/core` package, allowing you to use any modern bundler (Bun, esbuild, Vite, etc.) and the latest Node.js versions for your SharePoint solutions.
 
 ## Used SharePoint Framework Version
 
-![version](https://img.shields.io/badge/version-1.20.0-green.svg)
+![version](https://img.shields.io/badge/version-1.22.0-green.svg)
 
 ## Applies to
-
-- [SharePoint Framework](https://aka.ms/spfx)
-- [Microsoft 365 tenant](https://docs.microsoft.com/en-us/sharepoint/dev/spfx/set-up-your-developer-tenant)
+- SharePoint Online
 
 > Get your own free development tenant by subscribing to [Microsoft 365 developer program](http://aka.ms/o365devprogram)
 
 ## Prerequisites
 
-> Any special pre-requisites?
-
-## Solution
-
-| Solution    | Author(s)                                               |
-| ----------- | ------------------------------------------------------- |
-| folder name | Author details (name, company, twitter alias with link) |
-
-## Version history
-
-| Version | Date             | Comments        |
-| ------- | ---------------- | --------------- |
-| 1.1     | March 10, 2021   | Update comment  |
-| 1.0     | January 29, 2021 | Initial release |
+- SharePoint Online tenant
+- App Catalog site collection
+- Global administrator or SharePoint administrator permissions for tenant-wide deployment
+- Node.js 22.14.0 or higher (but less than 23.0.0)
 
 ## Disclaimer
 
@@ -42,27 +30,119 @@ Short summary on functionality and used technologies.
 
 ## Minimal Path to Awesome
 
-- Clone this repository
-- Ensure that you are at the solution folder
-- in the command-line run:
-  - **npm install**
-  - **gulp serve**
+### Installation
 
-> Include any additional steps as needed.
+1. **Clone this repository**
+   ```bash
+   git clone https://github.com/SPWizard01/spfx-extensions
+   cd spfx-extensions
+   ```
 
-## Features
+2. **Install dependencies**
+   ```bash
+   npm install
+   ```
 
-Description of the extension that expands upon high-level summary above.
+3. **Build the solution**
+   ```bash
+   npm run build
+   ```
 
-This extension illustrates the following concepts:
+4. **Package for deployment**
+   ```bash
+   npm run release
+   ```
 
-- topic 1
-- topic 2
-- topic 3
+5. **Deploy to App Catalog**
+   - Upload the generated `.sppkg` file from `./dist/deploy/` to your tenant's App Catalog
+   - Deploy the solution tenant-wide when prompted
+   - The solution will automatically create the required subsite and configuration infrastructure
 
-> Notice that better pictures and documentation will increase the sample usage and the value you are providing for others. Thanks for your submissions advance.
+### Post-Installation
 
-> Share your web part with others through Microsoft 365 Patterns and Practices program to get visibility and exposure. More details on the community, open-source projects and other activities from http://aka.ms/m365pnp.
+After successful deployment, you can:
+
+- Navigate to `/sites/appcatalog/SPFxExtensionsData/SitePages/SPFxExtensionsConfigurator.aspx` for global configuration
+- Add the SPFx Extensions Loader web part to any SharePoint page
+- Configure applications at different scopes (Global, Hub, Site, Web) as needed
+
+## Development Commands
+
+| Command | Description |
+| ------- | ----------- |
+| `npm run build` | Build the solution in development mode |
+| `npm run serve` | Start the local development server |
+| `npm run release` | Build and package for production deployment |
+| `npm run clean` | Clean build artifacts |
+| `npm test` | Run tests |
+
+## What This Solution Does
+
+When deployed to your SharePoint tenant, this solution:
+
+1. **Creates Infrastructure**: Automatically provisions a special subsite at `/sites/appcatalog/SPFxExtensionsData`
+2. **Configuration Management**: Sets up application-specific configuration lists in the subsite
+3. **Global Configuration Page**: Creates a configuration page at `SitePages/SPFxExtensionsConfigurator.aspx`
+4. **Multi-Scope Support**: Enables configuration for Global, Hub, Site, and Web scoped solutions
+5. **Framework Freedom**: Acts as a wrapper around `@spfx-extensions/core`, freeing you from SPFx ecosystem constraints
+
+## Key Benefits
+
+### 🚀 **Modern Development Stack**
+- Use any bundler you prefer: **Bun**, **esbuild**, **Vite**, **Webpack**, or others
+- Support for the latest Node.js versions (not limited to SPFx-supported versions)
+- Modern JavaScript/TypeScript features without SPFx limitations
+
+### 🔧 **Flexible Architecture**
+- Framework-agnostic development approach
+- Break free from Microsoft's SPFx app ecosystem constraints
+- Maintain full control over your build pipeline and dependencies
+
+### 🎯 **Enterprise-Ready**
+- Tenant-wide deployment capability
+- Centralized configuration management
+- Support for multiple scoping levels (Global/Hub/Site/Web)
+
+## Architecture Overview
+
+This solution consists of two main components:
+
+### 1. Application Customizer (`SpfxExtensionApplicationCustomizer`)
+- Deployed tenant-wide for global functionality
+- Initializes the core framework on every SharePoint page
+- Manages application lifecycle and placeholder handling
+
+### 2. Web Part (`SpfxExtensionloaderWebPart`)
+- Provides a configurable interface for loading custom applications
+- Integrates with the centralized configuration system
+- Supports dynamic app loading and configuration
+
+Both components leverage the `@spfx-extensions/core` package to provide the underlying framework functionality.
+## Technical Details
+
+### Core Dependencies
+- **@spfx-extensions/core**: The foundational package that provides framework-agnostic capabilities
+- **SharePoint Framework 1.21.0**: Base SPFx framework for SharePoint integration
+- **TypeScript**: Full TypeScript support with modern language features
+
+### Infrastructure Created
+- **Subsite**: `/sites/appcatalog/SPFxExtensionsData`
+- **Configuration Lists**: `SPFxExtensionsWhiteList`, `SPFxExtensionsConfiguration`
+- **Configuration Page**: `SitePages/SPFxExtensionsConfigurator.aspx`
+
+### Supported Scopes
+- **Global**: Tenant-wide configurations
+- **Hub**: Hub site specific configurations  
+- **Site**: Site collection specific configurations
+- **Web**: Individual web specific configurations
+
+## Contributing
+
+This project welcomes contributions and suggestions. Please feel free to submit issues and enhancement requests.
+
+## License
+
+This project is licensed under the GPL-3.0 License - see the [LICENSE](LICENSE) file for details.
 
 ## References
 
