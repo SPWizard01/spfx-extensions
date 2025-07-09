@@ -52,6 +52,10 @@ The solution acts as a wrapper around the `@spfx-extensions/core` package, allow
    ```bash
    npm run release
    ```
+   If you would like to change the name of the webpart to use your own then use `--change-name` argument
+   ```bash
+   npm run release --change-name My Awesome Webpart
+   ```
 
 5. **Deploy to App Catalog**
    - Upload the generated `.sppkg` file from `./dist/deploy/` to your tenant's App Catalog
