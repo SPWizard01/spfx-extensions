@@ -178,6 +178,8 @@ export default class SpfxExtensionloaderWebPart extends BaseClientSideWebPart<IS
         domElement: this.domElement,
         //eslint-disable-next-line @typescript-eslint/no-explicit-any
         webpartContext: this.context as any,
+        //eslint-disable-next-line @typescript-eslint/no-explicit-any
+        webpart: this as any,
         openPropertyPane: () => {
           this.openPropertyPane();
         },
