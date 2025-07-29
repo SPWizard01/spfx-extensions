@@ -13,12 +13,15 @@ import {
   PropertyPaneLabel
 } from "@microsoft/sp-property-pane";
 import { BaseClientSideWebPart, IWebPartPropertiesMetadata } from "@microsoft/sp-webpart-base";
-import type { IReadonlyTheme } from "@microsoft/sp-component-base";
-
-import styles from "./SpfxExtensionloaderWebPart.module.scss";
-//import * as strings from "SpfxExtensionloaderWebPartStrings";
+import { ITopActions } from "@microsoft/sp-top-actions";
 import { SPFxExtensionAppConfig, SPFxExtensionAppDefinition, SPFxExtensionAppIcon, SPFxExtensionAppInstance, SPFxExtensionAppRuntimeConfig, SPFxExtensionAppSearchableData } from "@spfx-extensions/core";
 import { APP_BUTTON_LABEL, EDIT_PAGE_AND_SELECT_WEBPART, SELECT_WEBPART, SPFXPREFIX } from "../../utilities/constants";
+import {
+  ThemeProvider,
+  type IReadonlyTheme,
+} from '@microsoft/sp-component-base';
+//import * as strings from "SpfxExtensionloaderWebPartStrings";
+import styles from "./SpfxExtensionloaderWebPart.module.scss";
 
 export interface ISpfxExtensionloaderWebPartProps extends SPFxExtensionAppSearchableData {
   selectedApp: string;
@@ -44,7 +47,8 @@ export default class SpfxExtensionloaderWebPart extends BaseClientSideWebPart<IS
   hideConfiguratorButton = false;
   configDomElement: HTMLElement | undefined;
   _isDarkTheme: boolean = false;
-
+  topActions: ITopActions | undefined = undefined;
+  themeProvider: ThemeProvider | undefined;
   public async onInit() {
     if (DEBUG) {
       console.debug(SPFXPREFIX, "onInit");
@@ -53,6 +57,8 @@ export default class SpfxExtensionloaderWebPart extends BaseClientSideWebPart<IS
       Environment.type === EnvironmentType.SharePoint
         ? "SharePoint"
         : "ClassicSharePoint";
+    this.themeProvider = this.context.serviceScope.consume(ThemeProvider.serviceKey);
+
     const { initCore } = await import(/* webpackChunkName: "spfx-extension-loader" */"../../services/initCoreService");
     //init core then do stuff;
     await initCore(envType);
@@ -77,7 +83,7 @@ export default class SpfxExtensionloaderWebPart extends BaseClientSideWebPart<IS
 
       this.SPFxExtensionInstance.executeListeners(
         "onConfigurationClose",
-        undefined
+        { domElement: this.configDomElement }
       );
     }
   }
@@ -113,10 +119,7 @@ export default class SpfxExtensionloaderWebPart extends BaseClientSideWebPart<IS
 
   protected onDisplayModeChanged(oldDisplayMode: DisplayMode): void {
     const mode = oldDisplayMode === DisplayMode.Edit ? "Read" : "Edit";
-    if (this.SPFxExtensionInstance) {
-      this.SPFxExtensionInstance.executeListeners("onDisplayModeChange", mode);
-      return;
-    }
+    this.SPFxExtensionInstance?.executeListeners("onDisplayModeChange", mode);
   }
 
   openPropertyPane() {
@@ -167,6 +170,22 @@ export default class SpfxExtensionloaderWebPart extends BaseClientSideWebPart<IS
     this.properties.searchableHtml = data.searchableHtml;
   }
 
+  setTopActions(actions: ITopActions) {
+    this.topActions = actions;
+  }
+
+  getTopActions() {
+    return this.topActions;
+  }
+
+  getThemeProvider() {
+    return this.themeProvider;
+  }
+
+  getConfigDomElement() {
+    return this.configDomElement;
+  }
+
   private async mountApp(appId: string) {
     if (ISDEBUG) {
       console.debug(SPFXPREFIX, "Mounting app", appId, "at", this.domElement);
@@ -199,9 +218,22 @@ export default class SpfxExtensionloaderWebPart extends BaseClientSideWebPart<IS
         setSearchableData: (data: SPFxExtensionAppSearchableData) => {
           this.setSearchData(data);
         },
+        setTopActions: (actions: ITopActions) => {
+          this.setTopActions(actions);
+        },
+        getTopActions: () => {
+          return this.getTopActions();
+        },
+        getThemeProvider: () => {
+          return this.getThemeProvider();
+        },
+        getConfigDomElement: () => {
+          return this.getConfigDomElement();
+        },
       };
       this.SPFxExtensionInstance = await window.__SPFxExtensions.InstantiateApp(appId, runTimeConfig);
       if (!this.SPFxExtensionInstance) {
+        // this.renderCompleted(undefined, true);
         return;
       }
       const newApp = window.__SPFxExtensions.Apps.find((app) => app.id === appId);
@@ -247,6 +279,7 @@ export default class SpfxExtensionloaderWebPart extends BaseClientSideWebPart<IS
     this.unmountApp();
   }
 
+  //#region HTML Elements Rendering
   appButtonElements: HTMLElement[] = [];
 
   webpartSectionElement = document.createElement("section");
@@ -385,6 +418,7 @@ export default class SpfxExtensionloaderWebPart extends BaseClientSideWebPart<IS
 
     this.renderCompleted(undefined, true);
   }
+  //#endregion HTML Elements Rendering
 
   public async render() {
     // might not be required anymore
@@ -494,9 +528,9 @@ export default class SpfxExtensionloaderWebPart extends BaseClientSideWebPart<IS
         key: "SPFxExtensionAppConfiguration",
         onRender: (domElement, _context, _callBack) => {
           this.configDomElement = domElement;
-          if (this.SPFxExtensionInstance) {
-            // when app instance is loaded forward the render event
-            this.SPFxExtensionInstance.instanceLoadPromise.then(() => {
+          // when app instance is loaded forward the render event
+          this.SPFxExtensionInstance?.instanceLoadPromise
+            .then(() => {
               this.SPFxExtensionInstance?.executeListeners(
                 "onConfigurationRender",
                 {
@@ -507,16 +541,12 @@ export default class SpfxExtensionloaderWebPart extends BaseClientSideWebPart<IS
             }).catch((err: any) => {
               console.error(SPFXPREFIX, "Error while awaiting app to load", err);
             });
-          }
         },
-        onDispose: (_domeElement, _context) => {
-          if (this.SPFxExtensionInstance) {
-            this.SPFxExtensionInstance.executeListeners(
-              "onConfigurationClose",
-              undefined
-            );
-          }
+        onDispose: (domElement, _context) => {
+          this.SPFxExtensionInstance?.executeListeners("onConfigurationClose", { domElement });
+          this.configDomElement = undefined;
         },
+        // context: this.context,
       },
     };
   }
@@ -572,7 +602,9 @@ export default class SpfxExtensionloaderWebPart extends BaseClientSideWebPart<IS
     };
   }
 
-
+  public getTopActionsConfiguration(): ITopActions | undefined {
+    return this.topActions;
+  }
 
   // private _getEnvironmentMessage(): Promise<string> {
   //   if (!!this.context.sdks.microsoftTeams) { // running in Teams, office.com or Outlook
@@ -602,6 +634,7 @@ export default class SpfxExtensionloaderWebPart extends BaseClientSideWebPart<IS
   // }
 
   protected onThemeChanged(currentTheme: IReadonlyTheme | undefined): void {
+    this.SPFxExtensionInstance?.executeListeners("onThemeChange", currentTheme);
     if (!currentTheme) {
       return;
     }
