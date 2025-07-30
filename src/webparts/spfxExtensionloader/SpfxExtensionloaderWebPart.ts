@@ -13,7 +13,7 @@ import {
   PropertyPaneLabel
 } from "@microsoft/sp-property-pane";
 import { BaseClientSideWebPart, IWebPartPropertiesMetadata } from "@microsoft/sp-webpart-base";
-import { ITopActions } from "@microsoft/sp-top-actions";
+import { ITopActions, ITopActionsField } from "@microsoft/sp-top-actions";
 import { SPFxExtensionAppConfig, SPFxExtensionAppDefinition, SPFxExtensionAppIcon, SPFxExtensionAppInstance, SPFxExtensionAppRuntimeConfig, SPFxExtensionAppSearchableData } from "@spfx-extensions/core";
 import { APP_BUTTON_LABEL, EDIT_PAGE_AND_SELECT_WEBPART, SELECT_WEBPART, SPFXPREFIX } from "../../utilities/constants";
 import {
@@ -26,6 +26,7 @@ import styles from "./SpfxExtensionloaderWebPart.module.scss";
 export interface ISpfxExtensionloaderWebPartProps extends SPFxExtensionAppSearchableData {
   selectedApp: string;
   SPFxExtensionAppConfiguration: SPFxExtensionAppConfig | undefined;
+  topActions: ITopActionsField[];
 }
 
 type propertyPath = keyof ISpfxExtensionloaderWebPartProps;
@@ -47,7 +48,6 @@ export default class SpfxExtensionloaderWebPart extends BaseClientSideWebPart<IS
   hideConfiguratorButton = false;
   configDomElement: HTMLElement | undefined;
   _isDarkTheme: boolean = false;
-  topActions: ITopActions | undefined = undefined;
   themeProvider: ThemeProvider | undefined;
   public async onInit() {
     if (DEBUG) {
@@ -170,12 +170,12 @@ export default class SpfxExtensionloaderWebPart extends BaseClientSideWebPart<IS
     this.properties.searchableHtml = data.searchableHtml;
   }
 
-  setTopActions(actions: ITopActions) {
-    this.topActions = actions;
+  getTopActions() {
+    return this.properties.topActions ?? [];
   }
 
-  getTopActions() {
-    return this.topActions;
+  setTopActions(fields: ITopActionsField[]) {
+    this.properties.topActions = fields ?? [];
   }
 
   getThemeProvider() {
@@ -220,7 +220,7 @@ export default class SpfxExtensionloaderWebPart extends BaseClientSideWebPart<IS
         setSearchableData: (data: SPFxExtensionAppSearchableData) => {
           this.setSearchData(data);
         },
-        setTopActions: (actions: ITopActions) => {
+        setTopActions: (actions: ITopActionsField[]) => {
           this.setTopActions(actions);
         },
         getTopActions: () => {
@@ -527,7 +527,7 @@ export default class SpfxExtensionloaderWebPart extends BaseClientSideWebPart<IS
       type: PropertyPaneFieldType.Custom,
       targetProperty: name,
       properties: {
-        key: "SPFxExtensionAppConfiguration",
+        key: name,
         onRender: (domElement, _context, _callBack) => {
           this.configDomElement = domElement;
           // when app instance is loaded forward the render event
@@ -605,7 +605,15 @@ export default class SpfxExtensionloaderWebPart extends BaseClientSideWebPart<IS
   }
 
   public getTopActionsConfiguration(): ITopActions | undefined {
-    return this.topActions;
+    return {
+      topActions: this.properties.topActions ?? [],
+      onExecute: (actionName: string, updatedValue: unknown) => {
+        this.SPFxExtensionInstance?.executeListeners("onTopActionExecute", {
+          actionName,
+          updatedValue
+        });
+      }
+    }
   }
 
   // private _getEnvironmentMessage(): Promise<string> {
@@ -637,21 +645,20 @@ export default class SpfxExtensionloaderWebPart extends BaseClientSideWebPart<IS
 
   protected onThemeChanged(currentTheme: IReadonlyTheme | undefined): void {
     this.SPFxExtensionInstance?.executeListeners("onThemeChange", currentTheme);
-    if (!currentTheme) {
-      return;
-    }
+    // if (!currentTheme) {
+    //   return;
+    // }
 
-    this._isDarkTheme = !!currentTheme.isInverted;
-    const {
-      semanticColors
-    } = currentTheme;
+    // this._isDarkTheme = !!currentTheme.isInverted;
+    // const {
+    //   semanticColors
+    // } = currentTheme;
 
-    if (semanticColors) {
-      this.domElement.style.setProperty("--bodyText", semanticColors.bodyText || null);
-      this.domElement.style.setProperty("--link", semanticColors.link || null);
-      this.domElement.style.setProperty("--linkHovered", semanticColors.linkHovered || null);
-    }
-
+    // if (semanticColors) {
+    //   this.domElement.style.setProperty("--bodyText", semanticColors.bodyText || null);
+    //   this.domElement.style.setProperty("--link", semanticColors.link || null);
+    //   this.domElement.style.setProperty("--linkHovered", semanticColors.linkHovered || null);
+    // }
   }
 
   protected get dataVersion(): Version {
