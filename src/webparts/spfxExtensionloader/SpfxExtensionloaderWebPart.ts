@@ -47,8 +47,15 @@ export default class SpfxExtensionloaderWebPart extends BaseClientSideWebPart<IS
   hideAppSelectorWhenAppLoaded = false;
   hideConfiguratorButton = false;
   configDomElement: HTMLElement | undefined;
-  _isDarkTheme: boolean = false;
   themeProvider: ThemeProvider | undefined;
+  appButtonElements: HTMLElement[] = [];
+
+  webpartSectionElement = document.createElement("section");
+  webpartSectionTitle = document.createElement("header");
+  appButtonsWrapper = document.createElement("div");
+  appButtonsContainer = document.createElement("div");
+
+
   public async onInit() {
     if (DEBUG) {
       console.debug(SPFXPREFIX, "onInit");
@@ -65,63 +72,8 @@ export default class SpfxExtensionloaderWebPart extends BaseClientSideWebPart<IS
     this.appCatalogUrl = window.__SPFxExtensions.Utils.ConfiguratorPageUrl;
   }
 
-  protected onPropertyPaneConfigurationComplete(): void {
-    const isPaneOpen = this.context.propertyPane.isPropertyPaneOpen();
 
-    // notify close only if the pane is not open
-    // complete event fires also when config is saved
-    //     This event method is invoked in the following cases:
-
-    // When the CONFIGURATION_COMPLETE_TIMEOUT((currently the value is 5 secs) elapses after the last change.
-
-    // When user clicks the "X" (close) button before the CONFIGURATION_COMPLETE_TIMEOUT elapses.
-
-    // When user clicks the 'Apply' button before the CONFIGURATION_COMPLETE_TIMEOUT elapses.
-
-    // When the user switches web parts then the current web part gets this event.
-    if (!isPaneOpen && this.SPFxExtensionInstance) {
-
-      this.SPFxExtensionInstance.executeListeners(
-        "onConfigurationClose",
-        { domElement: this.configDomElement }
-      );
-    }
-  }
-
-  protected onPropertyPaneFieldChanged(
-    propertyPath: propertyPath,
-    //eslint-disable-next-line @typescript-eslint/no-explicit-any
-    oldValue: any,
-    //eslint-disable-next-line @typescript-eslint/no-explicit-any
-    newValue: any
-  ): void {
-    // if selected app changed unmount the old app
-    if (propertyPath === "selectedApp") {
-      if (oldValue && oldValue !== newValue && this.SPFxExtensionInstance) {
-        const shouldUnmount = confirm(
-          "You are about to switch app, this will erase all previous app configuration. Are you sure?"
-        );
-        if (!shouldUnmount) {
-          this.properties[propertyPath] = oldValue;
-          return;
-        }
-        this.unmountApp();
-      }
-      // if new app was selected, mount it
-      if (newValue) {
-        this.webpartSectionElement.remove();
-        this.mountApp(newValue).catch(() => {
-          // do nothing
-        });
-      }
-    }
-  }
-
-  protected onDisplayModeChanged(oldDisplayMode: DisplayMode): void {
-    const mode = oldDisplayMode === DisplayMode.Edit ? "Read" : "Edit";
-    this.SPFxExtensionInstance?.executeListeners("onDisplayModeChange", mode);
-  }
-
+  //#region App mounting and property forwarding
   openPropertyPane() {
     // if (this.context.propertyPane.isPropertyPaneOpen()) {
     //   this.context.propertyPane.close();
@@ -235,7 +187,7 @@ export default class SpfxExtensionloaderWebPart extends BaseClientSideWebPart<IS
       };
       this.SPFxExtensionInstance = await window.__SPFxExtensions.InstantiateApp(appId, runTimeConfig);
       if (!this.SPFxExtensionInstance) {
-        // this.renderCompleted(undefined, true);
+        console.warn(SPFXPREFIX, "App instance is undefined, cannot mount app", appId);
         return;
       }
       const newApp = window.__SPFxExtensions.Apps.find((app) => app.id === appId);
@@ -248,12 +200,11 @@ export default class SpfxExtensionloaderWebPart extends BaseClientSideWebPart<IS
         //   this.context.propertyPane.open();
         // }
       }
-      this.renderCompleted(undefined, true);
     }
     catch (err) {
       console.error(SPFXPREFIX, "Error while mounting appid", appId, err);
       const error = new Error(`${err}`);
-      this.renderCompleted(error);
+      return error;
     }
   }
 
@@ -273,21 +224,9 @@ export default class SpfxExtensionloaderWebPart extends BaseClientSideWebPart<IS
     this.SPFxExtensionInstance = undefined;
     this.domElement.innerHTML = "";
   }
-
-  protected onDispose(): void {
-    if (DEBUG) {
-      console.debug(SPFXPREFIX, "onDispose");
-    }
-    this.unmountApp();
-  }
+  //#endregion
 
   //#region HTML Elements Rendering
-  appButtonElements: HTMLElement[] = [];
-
-  webpartSectionElement = document.createElement("section");
-  webpartSectionTitle = document.createElement("header");
-  appButtonsWrapper = document.createElement("div");
-  appButtonsContainer = document.createElement("div");
 
   generateIconElement(icon?: SPFxExtensionAppIcon) {
     const iconElement = document.createElement("i");
@@ -399,6 +338,7 @@ export default class SpfxExtensionloaderWebPart extends BaseClientSideWebPart<IS
     }
     catch (err) {
       console.error(SPFXPREFIX, "Error while awaiting app initialization", err);
+      return new Error(`Error while awaiting app initialization: ${err}`);
     }
   }
 
@@ -414,11 +354,9 @@ export default class SpfxExtensionloaderWebPart extends BaseClientSideWebPart<IS
 
     if (this.displayMode === DisplayMode.Read) {
       this.renderDisplayMode();
-    } else {
-      await this.renderEditMode();
+      return;
     }
-
-    this.renderCompleted(undefined, true);
+    return this.renderEditMode();
   }
   //#endregion HTML Elements Rendering
 
@@ -432,24 +370,29 @@ export default class SpfxExtensionloaderWebPart extends BaseClientSideWebPart<IS
     if (DEBUG) {
       console.debug(SPFXPREFIX, "render");
     }
+    let possibleError: Error | undefined = undefined;
 
-    //in live editing mode dispose is not called when in production build for some reason
-    //we unmount and remount the app if applicable
-    if (this.SPFxExtensionInstance) {
-      if (this.SPFxExtensionInstance.unmountOnRender) {
-        this.unmountApp();
-      } else {
-        this.SPFxExtensionInstance.executeListeners("onRender", undefined);
+    try {
+      //in live editing mode dispose is not called when in production build for some reason
+      //we unmount and remount the app if applicable
+      if (this.SPFxExtensionInstance) {
+        if (this.SPFxExtensionInstance.unmountOnRender) {
+          this.unmountApp();
+        } else {
+          this.SPFxExtensionInstance.executeListeners("onRender", undefined);
+          return;
+        }
+      }
+
+      if (this.properties.selectedApp && !this.SPFxExtensionInstance) {
+        possibleError = await this.mountApp(this.properties.selectedApp);
         return;
       }
-    }
 
-    if (this.properties.selectedApp && !this.SPFxExtensionInstance) {
-      await this.mountApp(this.properties.selectedApp);
-      return;
+      possibleError = await this.renderEmptyApp();
+    } finally {
+      this.renderCompleted(possibleError, true);
     }
-
-    await this.renderEmptyApp();
   }
 
   protected renderCompleted(error?: Error, didUpdate?: boolean): void {
@@ -614,6 +557,78 @@ export default class SpfxExtensionloaderWebPart extends BaseClientSideWebPart<IS
         });
       }
     }
+  }
+
+  protected onPropertyPaneConfigurationComplete(): void {
+    const isPaneOpen = this.context.propertyPane.isPropertyPaneOpen();
+
+    // notify close only if the pane is not open
+    // complete event fires also when config is saved
+    //     This event method is invoked in the following cases:
+
+    // When the CONFIGURATION_COMPLETE_TIMEOUT((currently the value is 5 secs) elapses after the last change.
+
+    // When user clicks the "X" (close) button before the CONFIGURATION_COMPLETE_TIMEOUT elapses.
+
+    // When user clicks the 'Apply' button before the CONFIGURATION_COMPLETE_TIMEOUT elapses.
+
+    // When the user switches web parts then the current web part gets this event.
+    if (!isPaneOpen && this.SPFxExtensionInstance) {
+
+      this.SPFxExtensionInstance.executeListeners(
+        "onConfigurationClose",
+        { domElement: this.configDomElement }
+      );
+    }
+  }
+
+  protected onPropertyPaneFieldChanged(
+    propertyPath: propertyPath,
+    //eslint-disable-next-line @typescript-eslint/no-explicit-any
+    oldValue: any,
+    //eslint-disable-next-line @typescript-eslint/no-explicit-any
+    newValue: any
+  ): void {
+    // if selected app changed unmount the old app
+    if (propertyPath === "selectedApp") {
+      if (oldValue && oldValue !== newValue && this.SPFxExtensionInstance) {
+        const shouldUnmount = confirm(
+          "You are about to switch app, this will erase all previous app configuration. Are you sure?"
+        );
+        if (!shouldUnmount) {
+          this.properties[propertyPath] = oldValue;
+          return;
+        }
+        this.unmountApp();
+      }
+      // if new app was selected, mount it
+      if (newValue) {
+        this.webpartSectionElement.remove();
+        this.mountApp(newValue).catch(() => {
+          // do nothing
+        });
+      }
+    }
+  }
+
+  protected onDisplayModeChanged(oldDisplayMode: DisplayMode): void {
+    const mode = oldDisplayMode === DisplayMode.Edit ? "Read" : "Edit";
+    this.SPFxExtensionInstance?.executeListeners("onDisplayModeChange", mode);
+  }
+
+  protected onDispose(): void {
+    if (DEBUG) {
+      console.debug(SPFXPREFIX, "onDispose");
+    }
+    this.unmountApp();
+    this.appButtonElements.forEach((button) => {
+      button.remove();
+    });
+    this.appButtonElements.splice(0, this.appButtonElements.length);
+    this.webpartSectionElement.remove();
+    this.webpartSectionTitle.remove();
+    this.appButtonsWrapper.remove();
+    this.appButtonsContainer.remove();
   }
 
   // private _getEnvironmentMessage(): Promise<string> {
