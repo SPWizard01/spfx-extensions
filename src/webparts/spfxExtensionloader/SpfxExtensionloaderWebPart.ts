@@ -1,4 +1,4 @@
-import { DisplayMode, Environment, EnvironmentType, Version } from "@microsoft/sp-core-library";
+import { DisplayMode, Environment, EnvironmentType, ServiceScope, Version } from "@microsoft/sp-core-library";
 import {
   IPropertyPaneConditionalGroup,
   type IPropertyPaneConfiguration,
@@ -48,6 +48,7 @@ export default class SpfxExtensionloaderWebPart extends BaseClientSideWebPart<IS
   hideConfiguratorButton = false;
   configDomElement: HTMLElement | undefined;
   themeProvider: ThemeProvider | undefined;
+  serviceScope: ServiceScope | undefined;
   appButtonElements: HTMLElement[] = [];
 
   webpartSectionElement = document.createElement("section");
@@ -65,7 +66,7 @@ export default class SpfxExtensionloaderWebPart extends BaseClientSideWebPart<IS
         ? "SharePoint"
         : "ClassicSharePoint";
     this.themeProvider = this.context.serviceScope.consume(ThemeProvider.serviceKey);
-
+    this.serviceScope = this.context.serviceScope;
     const { initCore } = await import(/* webpackChunkName: "spfx-extension-loader" */"../../services/initCoreService");
     //init core then do stuff;
     await initCore(envType);
@@ -138,6 +139,14 @@ export default class SpfxExtensionloaderWebPart extends BaseClientSideWebPart<IS
     return this.configDomElement;
   }
 
+  getContext() {
+    return this.context;
+  }
+
+  getServiceScope() {
+    return this.serviceScope;
+  }
+
   private async mountApp(appId: string) {
     if (ISDEBUG) {
       console.debug(SPFXPREFIX, "Mounting app", appId, "at", this.domElement);
@@ -147,8 +156,6 @@ export default class SpfxExtensionloaderWebPart extends BaseClientSideWebPart<IS
     try {
       const runTimeConfig: SPFxExtensionAppRuntimeConfig = {
         domElement: this.domElement,
-        //eslint-disable-next-line @typescript-eslint/no-explicit-any
-        webpartContext: this.context as any,
         //eslint-disable-next-line @typescript-eslint/no-explicit-any
         webpart: this as any,
         openPropertyPane: () => {
@@ -184,6 +191,12 @@ export default class SpfxExtensionloaderWebPart extends BaseClientSideWebPart<IS
         getConfigDomElement: () => {
           return this.getConfigDomElement();
         },
+        getContext: () => {
+          return this.getContext();
+        },
+        getServiceScope: () => {
+          return this.getServiceScope();
+        }
       };
       this.SPFxExtensionInstance = await window.__SPFxExtensions.InstantiateApp(appId, runTimeConfig);
       if (!this.SPFxExtensionInstance) {
@@ -420,6 +433,39 @@ export default class SpfxExtensionloaderWebPart extends BaseClientSideWebPart<IS
     };
   }
 
+  CustomWebpartConfigurationField(
+    name: string
+  ): IPropertyPaneField<IPropertyPaneCustomFieldProps> {
+    return {
+      type: PropertyPaneFieldType.Custom,
+      targetProperty: name,
+      properties: {
+        key: name,
+        onRender: (domElement, _context, _callBack) => {
+          this.configDomElement = domElement;
+          // when app instance is loaded forward the render event
+          this.SPFxExtensionInstance?.instanceLoadPromise
+            .then(() => {
+              this.SPFxExtensionInstance?.executeListeners(
+                "onConfigurationRender",
+                {
+                  domElement,
+                }
+              );
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            }).catch((err: any) => {
+              console.error(SPFXPREFIX, "Error while awaiting app to load", err);
+            });
+        },
+        onDispose: (domElement, _context) => {
+          this.SPFxExtensionInstance?.executeListeners("onConfigurationClose", { domElement });
+          this.configDomElement = undefined;
+        },
+        // context: this.context,
+      },
+    };
+  }
+
   protected onPropertyPaneConfigurationStart(): void {
     if (ISDEBUG) {
       console.debug(SPFXPREFIX, "Property pane configuration start");
@@ -461,39 +507,6 @@ export default class SpfxExtensionloaderWebPart extends BaseClientSideWebPart<IS
     }).catch((err: any) => {
       console.error(SPFXPREFIX, "Error while awaiting all app assets to load", err);
     });
-  }
-
-  CustomWebpartConfigurationField(
-    name: string
-  ): IPropertyPaneField<IPropertyPaneCustomFieldProps> {
-    return {
-      type: PropertyPaneFieldType.Custom,
-      targetProperty: name,
-      properties: {
-        key: name,
-        onRender: (domElement, _context, _callBack) => {
-          this.configDomElement = domElement;
-          // when app instance is loaded forward the render event
-          this.SPFxExtensionInstance?.instanceLoadPromise
-            .then(() => {
-              this.SPFxExtensionInstance?.executeListeners(
-                "onConfigurationRender",
-                {
-                  domElement,
-                }
-              );
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            }).catch((err: any) => {
-              console.error(SPFXPREFIX, "Error while awaiting app to load", err);
-            });
-        },
-        onDispose: (domElement, _context) => {
-          this.SPFxExtensionInstance?.executeListeners("onConfigurationClose", { domElement });
-          this.configDomElement = undefined;
-        },
-        // context: this.context,
-      },
-    };
   }
 
   protected getPropertyPaneConfiguration(): IPropertyPaneConfiguration {
@@ -614,6 +627,14 @@ export default class SpfxExtensionloaderWebPart extends BaseClientSideWebPart<IS
   protected onDisplayModeChanged(oldDisplayMode: DisplayMode): void {
     const mode = oldDisplayMode === DisplayMode.Edit ? "Read" : "Edit";
     this.SPFxExtensionInstance?.executeListeners("onDisplayModeChange", mode);
+  }
+
+  protected onAfterPropertyPaneChangesApplied(): void {
+    this.SPFxExtensionInstance?.executeListeners("onPropertyPaneChangesApplied", undefined);
+  }
+
+  protected onAfterResize(newWidth: number): void {
+    this.SPFxExtensionInstance?.executeListeners("onAfterResize", { newWidth });
   }
 
   protected onDispose(): void {
