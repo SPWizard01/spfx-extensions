@@ -12,7 +12,7 @@ import {
   PropertyPaneFieldType,
   PropertyPaneLabel
 } from "@microsoft/sp-property-pane";
-import { BaseClientSideWebPart, IWebPartPropertiesMetadata } from "@microsoft/sp-webpart-base";
+import { BaseClientSideWebPart, IWebPartPropertiesMetadata, WebPartContext } from "@microsoft/sp-webpart-base";
 import { ITopActions, ITopActionsField } from "@microsoft/sp-top-actions";
 import { SPFxExtensionAppConfig, SPFxExtensionAppDefinition, SPFxExtensionAppIcon, SPFxExtensionAppInstance, SPFxExtensionAppRuntimeConfig, SPFxExtensionAppSearchableData } from "@spfx-extensions/core";
 import { APP_BUTTON_LABEL, EDIT_PAGE_AND_SELECT_WEBPART, SELECT_WEBPART, SPFXPREFIX } from "../../utilities/constants";
@@ -50,16 +50,22 @@ export default class SpfxExtensionloaderWebPart extends BaseClientSideWebPart<IS
   themeProvider: ThemeProvider | undefined;
   serviceScope: ServiceScope | undefined;
   appButtonElements: HTMLElement[] = [];
-
+  
   webpartSectionElement = document.createElement("section");
   webpartSectionTitle = document.createElement("header");
   appButtonsWrapper = document.createElement("div");
   appButtonsContainer = document.createElement("div");
-
+  
+  // for some reason onRender these properties are not available if accessing `this` on edit mode
+  // so we copy them in onInit
+  webPartContext!: WebPartContext;
+  webPartComponentId!: string;
+  webPartInstanceId!: string;
+  webPartWidth!: number;
 
   public async onInit() {
     if (DEBUG) {
-      console.debug(SPFXPREFIX, "onInit");
+      console.debug(SPFXPREFIX, "onInit", this.instanceId);
     }
     const envType =
       Environment.type === EnvironmentType.SharePoint
@@ -67,6 +73,12 @@ export default class SpfxExtensionloaderWebPart extends BaseClientSideWebPart<IS
         : "ClassicSharePoint";
     this.themeProvider = this.context.serviceScope.consume(ThemeProvider.serviceKey);
     this.serviceScope = this.context.serviceScope;
+    
+    this.webPartContext = this.context;
+    this.webPartInstanceId = this.instanceId;
+    this.webPartComponentId = this.componentId;
+    this.webPartWidth = this.width;
+
     const { initCore } = await import(/* webpackChunkName: "spfx-extension-loader" */"../../services/initCoreService");
     //init core then do stuff;
     await initCore(envType);
@@ -140,7 +152,7 @@ export default class SpfxExtensionloaderWebPart extends BaseClientSideWebPart<IS
   }
 
   getContext() {
-    return this.context;
+    return this.webPartContext;
   }
 
   getServiceScope() {
@@ -283,6 +295,9 @@ export default class SpfxExtensionloaderWebPart extends BaseClientSideWebPart<IS
       ev.preventDefault();
       this.properties.selectedApp = app.id;
       this.webpartSectionElement.remove();
+      this.dropDownProps.selectedKey = app.id;
+      // refresh to rerender the dropdown and description
+      this.context.propertyPane.refresh();
       this.mountApp(app.id).catch(() => {
         // do nothing
       });
@@ -381,7 +396,7 @@ export default class SpfxExtensionloaderWebPart extends BaseClientSideWebPart<IS
     //   this.onPropertyPaneConfigurationStart();
     // }
     if (DEBUG) {
-      console.debug(SPFXPREFIX, "render");
+      console.debug(SPFXPREFIX, "render", this.instanceId);
     }
     let possibleError: Error | undefined = undefined;
 
@@ -575,6 +590,11 @@ export default class SpfxExtensionloaderWebPart extends BaseClientSideWebPart<IS
   protected onPropertyPaneConfigurationComplete(): void {
     const isPaneOpen = this.context.propertyPane.isPropertyPaneOpen();
 
+    if (DEBUG) {
+      console.debug(SPFXPREFIX, "onPropertyPaneConfigurationComplete", isPaneOpen);
+    }
+
+
     // notify close only if the pane is not open
     // complete event fires also when config is saved
     //     This event method is invoked in the following cases:
@@ -602,6 +622,9 @@ export default class SpfxExtensionloaderWebPart extends BaseClientSideWebPart<IS
     //eslint-disable-next-line @typescript-eslint/no-explicit-any
     newValue: any
   ): void {
+    if (DEBUG) {
+      console.debug(SPFXPREFIX, "onPropertyPaneFieldChanged", propertyPath, oldValue, newValue);
+    }
     // if selected app changed unmount the old app
     if (propertyPath === "selectedApp") {
       if (oldValue && oldValue !== newValue && this.SPFxExtensionInstance) {
@@ -625,15 +648,24 @@ export default class SpfxExtensionloaderWebPart extends BaseClientSideWebPart<IS
   }
 
   protected onDisplayModeChanged(oldDisplayMode: DisplayMode): void {
-    const mode = oldDisplayMode === DisplayMode.Edit ? "Read" : "Edit";
-    this.SPFxExtensionInstance?.executeListeners("onDisplayModeChange", mode);
+    if (DEBUG) {
+      console.debug(SPFXPREFIX, "onDisplayModeChanged", oldDisplayMode);
+    }
+    const newDisplayMode = oldDisplayMode === DisplayMode.Edit ? "Read" : "Edit";
+    this.SPFxExtensionInstance?.executeListeners("onDisplayModeChange", newDisplayMode);
   }
 
   protected onAfterPropertyPaneChangesApplied(): void {
+    if (DEBUG) {
+      console.debug(SPFXPREFIX, "onAfterPropertyPaneChangesApplied");
+    }
     this.SPFxExtensionInstance?.executeListeners("onPropertyPaneChangesApplied", undefined);
   }
 
   protected onAfterResize(newWidth: number): void {
+    if (DEBUG) {
+      console.debug(SPFXPREFIX, "onAfterResize");
+    }
     this.SPFxExtensionInstance?.executeListeners("onAfterResize", { newWidth });
   }
 
