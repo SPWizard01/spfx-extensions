@@ -50,12 +50,14 @@ export default class SpfxExtensionloaderWebPart extends BaseClientSideWebPart<IS
   themeProvider: ThemeProvider | undefined;
   serviceScope: ServiceScope | undefined;
   appButtonElements: HTMLElement[] = [];
-  
+
   webpartSectionElement = document.createElement("section");
   webpartSectionTitle = document.createElement("header");
   appButtonsWrapper = document.createElement("div");
   appButtonsContainer = document.createElement("div");
-  
+  // token/registration returned by AddAppEventListener so we can remove it
+  private appAddedListenerRegistration: unknown | undefined;
+
   // for some reason onRender these properties are not available if accessing `this` on edit mode
   // so we copy them in onInit
   webPartContext!: WebPartContext;
@@ -73,7 +75,7 @@ export default class SpfxExtensionloaderWebPart extends BaseClientSideWebPart<IS
         : "ClassicSharePoint";
     this.themeProvider = this.context.serviceScope.consume(ThemeProvider.serviceKey);
     this.serviceScope = this.context.serviceScope;
-    
+
     this.webPartContext = this.context;
     this.webPartInstanceId = this.instanceId;
     this.webPartComponentId = this.componentId;
@@ -270,6 +272,8 @@ export default class SpfxExtensionloaderWebPart extends BaseClientSideWebPart<IS
     if (icon.iconType === "url") {
       const imageElement = document.createElement("img");
       imageElement.src = icon.iconData;
+      // Accessibility: empty alt to mark decorative image; latest browsers handle this well
+      imageElement.alt = "";
       iconElement.appendChild(imageElement);
     }
 
@@ -304,6 +308,8 @@ export default class SpfxExtensionloaderWebPart extends BaseClientSideWebPart<IS
     });
 
     this.appButtonsContainer.appendChild(appButtonElement);
+    // track for cleanup on dispose
+    this.appButtonElements.push(appButtonElement);
   }
 
   createWebpartSection(button?: boolean) {
@@ -328,15 +334,20 @@ export default class SpfxExtensionloaderWebPart extends BaseClientSideWebPart<IS
     this.createWebpartSection(true);
 
     this.appButtonsContainer.className = styles.appButtonsContainer;
+    // Clear any previously rendered buttons to avoid duplicates on re-render
+    this.appButtonsContainer.innerHTML = "";
     this.appButtonsWrapper.appendChild(this.appButtonsContainer);
     this.appButtonsWrapper.className = styles.appButtonsWrapper;
     this.domElement.appendChild(this.webpartSectionElement);
 
-    window.__SPFxExtensions.AddAppEventListener("appAdded", (app) => {
-      if (app.isWebPartApp) {
-        this.createAndAppendAppButtons(app);
-      }
-    });
+    // Register once: store registration so we can remove it later
+    if (!this.appAddedListenerRegistration) {
+      this.appAddedListenerRegistration = window.__SPFxExtensions.AddAppEventListener("appAdded", (app: SPFxExtensionAppDefinition) => {
+        if (app.isWebPartApp) {
+          this.createAndAppendAppButtons(app);
+        }
+      });
+    }
 
     window.__SPFxExtensions.Apps.filter((app) => app.registrationCompleted).forEach(
       (app) => {
@@ -674,6 +685,12 @@ export default class SpfxExtensionloaderWebPart extends BaseClientSideWebPart<IS
       console.debug(SPFXPREFIX, "onDispose");
     }
     this.unmountApp();
+    // Remove the global event listener if we registered it
+    if (this.appAddedListenerRegistration && window.__SPFxExtensions.RemoveAppEventListener) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      window.__SPFxExtensions.RemoveAppEventListener(this.appAddedListenerRegistration as any);
+      this.appAddedListenerRegistration = undefined;
+    }
     this.appButtonElements.forEach((button) => {
       button.remove();
     });
