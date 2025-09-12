@@ -17,11 +17,20 @@
           "manifest": "./src/webparts/spfxExtensionloader/SpfxExtensionloaderWebPart.manifest.json"
         }
       ]
+    },
+    "spfx-card-adaptive-card-extension": {
+      "components": [
+        {
+          "entrypoint": "./lib/adaptiveCardExtensions/spfxCard/SpfxCardAdaptiveCardExtension.js",
+          "manifest": "./src/adaptiveCardExtensions/spfxCard/SpfxCardAdaptiveCardExtension.manifest.json"
+        }
+      ]
     }
   },
   "externals": {},
   "localizedResources": {
     "SpfxExtensionApplicationCustomizerStrings": "lib/extensions/spfxExtension/loc/{locale}.js",
-    "SpfxExtensionloaderWebPartStrings": "lib/webparts/spfxExtensionloader/loc/{locale}.js"
+    "SpfxExtensionloaderWebPartStrings": "lib/webparts/spfxExtensionloader/loc/{locale}.js",
+    "SpfxCardAdaptiveCardExtensionStrings": "lib/adaptiveCardExtensions/spfxCard/loc/{locale}.js"
   }
 }

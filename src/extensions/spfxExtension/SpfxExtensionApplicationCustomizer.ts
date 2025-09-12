@@ -2,7 +2,7 @@ import {
   BaseApplicationCustomizer,
   PlaceholderProvider
 } from '@microsoft/sp-application-base';
-//import * as strings from 'SpfxExtensionApplicationCustomizerStrings';
+// import * as _strings from 'SpfxExtensionApplicationCustomizerStrings';
 
 /**
  * If your command set uses the ClientSideComponentProperties JSON input,

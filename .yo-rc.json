@@ -4,7 +4,7 @@
     "isCreatingSolution": false,
     "nodeVersion": "22.15.0",
     "sdksVersions": {},
-    "version": "1.21.0",
+    "version": "1.21.1",
     "libraryName": "sp-fx-extensions",
     "libraryId": "7d56fff0-e90e-40a7-98cf-fcdbc63a9b01",
     "environment": "spo",
@@ -13,6 +13,7 @@
     "solutionShortDescription": "SPFxExtensions description",
     "skipFeatureDeployment": true,
     "isDomainIsolated": false,
-    "componentType": "webpart"
+    "componentType": "adaptiveCardExtension",
+    "aceTemplateType": "Generic"
   }
 }

@@ -27,7 +27,7 @@ module.exports = {
         //
         // STANDARDIZED BY:   @typescript-eslint\eslint-plugin\dist\configs\recommended.json
         "@typescript-eslint/explicit-function-return-type": [
-          1,
+          0,
           {
             allowExpressions: true,
             allowTypedFunctionExpressions: true,
@@ -288,7 +288,6 @@ module.exports = {
         "@microsoft/spfx/import-requires-chunk-name": 1,
         "@microsoft/spfx/no-require-ensure": 2,
         "@microsoft/spfx/pair-react-dom-render-unmount": 1,
-        "@typescript-eslint/explicit-function-return-type": 0,
       },
     },
     {
