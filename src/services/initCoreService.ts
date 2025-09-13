@@ -10,31 +10,20 @@ import configuratorUrl from "__spfxCoreConfigurator.js";
 import wrapperUrl from "__spfxWrapperClassic.js";
 
 let placeHolderResolved = false;
-let corePromise: Promise<void> | undefined = undefined;
 
 async function getSuggestedCoreUrl() {
   return Promise.resolve({ coreUrl, configuratorUrl, wrapperUrl });
 }
 
-export async function initCore(
-  envType: CompatibleEnvironmentType,
-  placeHolderProvider?: PlaceholderProvider,
-  eventObserver?: ISPEventObserver
-) {
-  if (!corePromise) {
-    const buildDate = BUILD_DATE;
-    console.info(SPFXPREFIX, "Initializing Core from SPFx Built:", buildDate);
-    corePromise = loadCoreForSPFxOrClassic(getSuggestedCoreUrl, envType, true);
-  }
-  await corePromise;
-
-  //only repopulate if these were not initialized through modern context
-  if (window.__SPFxExtensions.Utils && !window.__SPFxExtensions.Utils.initializedThroughSPFX) {
-    window.__SPFxExtensions.Utils.environmentType = envType;
-    window.__SPFxExtensions.Utils.initializedThroughSPFX = true;
-  }
+/**
+ * WILL FAIL IF CALLED BEFORE `initCore`
+ * 
+ * Registers a placeholder provider to be used by the core library
+ * @returns void
+ */
+export function registerPlaceHolderProvider(placeHolderProvider: PlaceholderProvider, eventObserver: ISPEventObserver) {
   //resolve once, i.e. modern webpart was loaded before app customizer
-  if (!placeHolderResolved && placeHolderProvider && eventObserver) {
+  if (!placeHolderResolved) {
     placeHolderResolved = true;
     window.__SPFxExtensions.Utils.placeHolderResolver({
       //eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -43,4 +32,29 @@ export async function initCore(
       eventObserver: eventObserver as any,
     });
   }
+}
+
+
+export async function initCore(
+  envType: CompatibleEnvironmentType,
+) {
+  if (window.__SPFxExtensions?.__CoreInitializationPromise) {
+    //only repopulate if these were not initialized through modern context
+    if (window.__SPFxExtensions.Utils && !window.__SPFxExtensions.Utils.initializedThroughSPFX) {
+      window.__SPFxExtensions.Utils.environmentType = envType;
+      window.__SPFxExtensions.Utils.initializedThroughSPFX = true;
+    }
+    return window.__SPFxExtensions.__CoreInitializationPromise;
+  }
+
+  const { promise, resolve } = Promise.withResolvers<void>();
+  //eslint-disable-next-line @typescript-eslint/no-explicit-any
+  (window.__SPFxExtensions as any) = {
+    __CoreInitializationPromise: promise,
+    __CoreInitializationResolver: resolve
+  }
+  const buildDate = BUILD_DATE;
+  console.info(SPFXPREFIX, "Initializing Core from SPFx Built:", buildDate);
+  await loadCoreForSPFxOrClassic(getSuggestedCoreUrl, envType, true);
+  window.__SPFxExtensions.__CoreInitializationResolver();
 }
