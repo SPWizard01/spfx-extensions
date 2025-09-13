@@ -35,9 +35,26 @@ type propertyPath = keyof ISpfxExtensionloaderWebPartProps;
 
 export default class SpfxExtensionloaderWebPart extends BaseClientSideWebPart<ISpfxExtensionloaderWebPartProps> {
 
+  configuratorUrl = "/sites/appcatalog/SPFxExtensionsData/SitePages/SPFxExtensionsConfigurator.aspx";
+  coreInitPromise = new Promise((resolve) => {
+    import(/* webpackChunkName: "spfx-extension-loader" */"../../services/initCoreService").then(({ initCore }) => {
+      const envType =
+        Environment.type === EnvironmentType.SharePoint
+          ? "SharePoint"
+          : "ClassicSharePoint";
+      initCore(envType).then(() => {
+        this.configuratorUrl = window.__SPFxExtensions.Utils.ConfiguratorPageUrl;
+        resolve(true);
+      }).catch((e) => {
+        console.error(SPFXPREFIX, "Initializing SPFxExtensions Core from WebPart failed", e);
+      })
+    }).catch((e) => {
+      console.error(SPFXPREFIX, "Importing SPFxExtensions Core from WebPart failed", e);
+    })
+  });
+
   SPFxExtensionInstance: SPFxExtensionAppInstance | undefined;
   allApps: IPropertyPaneDropdownOption[] = [];
-  appCatalogUrl = "/sites/appcatalog";
   dropDownProps: Partial<IPropertyPaneDropdownProps> = {
     options: [],
     selectedKey: "",
@@ -69,10 +86,7 @@ export default class SpfxExtensionloaderWebPart extends BaseClientSideWebPart<IS
     if (DEBUG) {
       console.debug(SPFXPREFIX, "onInit", this.instanceId);
     }
-    const envType =
-      Environment.type === EnvironmentType.SharePoint
-        ? "SharePoint"
-        : "ClassicSharePoint";
+
     this.themeProvider = this.context.serviceScope.consume(ThemeProvider.serviceKey);
     this.serviceScope = this.context.serviceScope;
 
@@ -80,11 +94,9 @@ export default class SpfxExtensionloaderWebPart extends BaseClientSideWebPart<IS
     this.webPartInstanceId = this.instanceId;
     this.webPartComponentId = this.componentId;
     this.webPartWidth = this.width;
-
-    const { initCore } = await import(/* webpackChunkName: "spfx-extension-loader" */"../../services/initCoreService");
-    //init core then do stuff;
-    await initCore(envType);
-    this.appCatalogUrl = window.__SPFxExtensions.Utils.ConfiguratorPageUrl;
+    // init is not truly awaited, sometimes render is called before init completes
+    // so we offload it to a promise which we can await in render
+    await this.coreInitPromise;
   }
 
 
@@ -409,6 +421,7 @@ export default class SpfxExtensionloaderWebPart extends BaseClientSideWebPart<IS
     if (DEBUG) {
       console.debug(SPFXPREFIX, "render", this.instanceId);
     }
+    await this.coreInitPromise;
     let possibleError: Error | undefined = undefined;
 
     try {
@@ -545,7 +558,7 @@ export default class SpfxExtensionloaderWebPart extends BaseClientSideWebPart<IS
           text: "Open Configurator",
           buttonType: 1,
           onClick: () => {
-            window.open(`${this.appCatalogUrl}?web=${this.context.pageContext.web.absoluteUrl}`, "_blank");
+            window.open(`${this.configuratorUrl}?web=${this.context.pageContext.web.absoluteUrl}`, "_blank");
           }
         })
       ]

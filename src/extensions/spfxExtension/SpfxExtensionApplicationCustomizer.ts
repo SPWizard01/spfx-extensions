@@ -2,7 +2,8 @@ import {
   BaseApplicationCustomizer,
   PlaceholderProvider
 } from '@microsoft/sp-application-base';
-// import * as _strings from 'SpfxExtensionApplicationCustomizerStrings';
+import { SPFXPREFIX } from '../../utilities/constants';
+//import * as strings from 'SpfxExtensionApplicationCustomizerStrings';
 
 /**
  * If your command set uses the ClientSideComponentProperties JSON input,
@@ -18,30 +19,47 @@ export interface ISpfxExtensionApplicationCustomizerProperties {
 export default class SpfxExtensionApplicationCustomizer
   extends BaseApplicationCustomizer<ISpfxExtensionApplicationCustomizerProperties> {
 
-  public async onInit(): Promise<void> {
-    const { initCore } = await import(/* webpackChunkName: "spfx-extension-loader" */"../../services/initCoreService");
-    //init core then do stuff
-    await initCore(
-      "SharePoint",
-      this.context.placeholderProvider,
-      this
-    );
-  }
-  protected async onPlaceholdersChanged(placeholderProvider: PlaceholderProvider) {
-    const { initCore } = await import(/* webpackChunkName: "spfx-extension-loader" */"../../services/initCoreService");
-    // this fires before onInit
-    await initCore(
-      "SharePoint",
-      placeholderProvider,
-      this
-    );
-    window.__SPFxExtensions.Apps.forEach((app) => {
-      app.instances.forEach((instance) => {
-        instance.executeListeners("onPlaceholdersChanged", placeholderProvider)
-      });
-    });
+  corePromise = new Promise((resolve) => {
+    import(/* webpackChunkName: "spfx-extension-loader" */"../../services/initCoreService").then(({ initCore, registerPlaceHolderProvider }) => {
+      initCore("SharePoint").then(() => {
+        registerPlaceHolderProvider(this.context.placeholderProvider, this);
+        resolve(true);
+      }).catch((e) => {
+        console.error(SPFXPREFIX, "Error while initializing core from application customizer", e);
+      })
+    }).catch((e) => {
+      console.error(SPFXPREFIX, "Error while importing core from application customizer", e);
+    })
+  });
 
+
+  // private async ensureCoreAndRegister() {
+  //   const { initCore, registerPlaceHolderProvider } = await import(/* webpackChunkName: "spfx-extension-loader" */"../../services/initCoreService");
+  //   await initCore("SharePoint");
+  //   registerPlaceHolderProvider(this.context.placeholderProvider, this);
+  // }
+
+  public async onInit(): Promise<void> {
+    await this.corePromise;
   }
+
+  waitAndNotifyPlaceholderChanged(placeholderProvider: PlaceholderProvider) {
+    this.corePromise!.then(() => {
+      window.__SPFxExtensions.Apps.forEach((app) => {
+        app.instances.forEach((instance) => {
+          instance.executeListeners("onPlaceholdersChanged", placeholderProvider)
+        });
+      });
+    }).catch(() => {
+      //swallow
+    });
+  }
+
+  protected onPlaceholdersChanged(placeholderProvider: PlaceholderProvider) {
+    // this fires before onInit
+    this.waitAndNotifyPlaceholderChanged(placeholderProvider);
+  }
+
   protected onDispose(): void {
     window.__SPFxExtensions?.Apps?.forEach((app) => {
       app.instances.forEach((instance) => {
