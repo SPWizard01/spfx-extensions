@@ -14,7 +14,7 @@ import {
 } from "@microsoft/sp-property-pane";
 import { BaseClientSideWebPart, IWebPartPropertiesMetadata, WebPartContext } from "@microsoft/sp-webpart-base";
 import { ITopActions, ITopActionsField } from "@microsoft/sp-top-actions";
-import { SPFxExtensionAppConfig, SPFxExtensionAppDefinition, SPFxExtensionAppIcon, SPFxExtensionAppInstance, SPFxExtensionAppRuntimeConfig, SPFxExtensionAppSearchableData } from "@spfx-extensions/core";
+import { SPFxExtensionAppConfig, SPFxExtensionAppDefinition, SPFxExtensionAppIcon, SPFxExtensionAppRuntimeConfig, SPFxExtensionAppSearchableData, SPFxExtensionCleanup } from "@spfx-extensions/core";
 import { APP_BUTTON_LABEL, EDIT_PAGE_AND_SELECT_WEBPART, SELECT_WEBPART, SPFXPREFIX } from "../../utilities/constants";
 import {
   ThemeProvider,
@@ -22,6 +22,7 @@ import {
 } from '@microsoft/sp-component-base';
 //import * as strings from "SpfxExtensionloaderWebPartStrings";
 import styles from "./SpfxExtensionloaderWebPart.module.scss";
+import { SPFxExtensionAppWebpartInstance } from "../../../../core/dist/models/appModelWebpart";
 
 export interface ISpfxExtensionloaderWebPartProps extends SPFxExtensionAppSearchableData {
   selectedApp: string;
@@ -53,7 +54,7 @@ export default class SpfxExtensionloaderWebPart extends BaseClientSideWebPart<IS
     })
   });
 
-  SPFxExtensionInstance: SPFxExtensionAppInstance | undefined;
+  SPFxExtensionInstance: SPFxExtensionAppWebpartInstance | undefined;
   allApps: IPropertyPaneDropdownOption[] = [];
   dropDownProps: Partial<IPropertyPaneDropdownProps> = {
     options: [],
@@ -73,7 +74,7 @@ export default class SpfxExtensionloaderWebPart extends BaseClientSideWebPart<IS
   appButtonsWrapper = document.createElement("div");
   appButtonsContainer = document.createElement("div");
   // token/registration returned by AddAppEventListener so we can remove it
-  private appAddedListenerRegistration: unknown | undefined;
+  appAddedListenerRegistration: SPFxExtensionCleanup | undefined;
 
   // for some reason onRender these properties are not available if accessing `this` on edit mode
   // so we copy them in onInit
@@ -181,6 +182,7 @@ export default class SpfxExtensionloaderWebPart extends BaseClientSideWebPart<IS
     this.domElement.innerHTML = "";
     try {
       const runTimeConfig: SPFxExtensionAppRuntimeConfig = {
+        instanceType: "webpart",
         domElement: this.domElement,
         //eslint-disable-next-line @typescript-eslint/no-explicit-any
         webpart: this as any,
@@ -224,7 +226,7 @@ export default class SpfxExtensionloaderWebPart extends BaseClientSideWebPart<IS
           return this.getServiceScope();
         }
       };
-      this.SPFxExtensionInstance = await window.__SPFxExtensions.InstantiateApp(appId, runTimeConfig);
+      this.SPFxExtensionInstance = await window.__SPFxExtensions.InstantiateApp(appId, runTimeConfig) as SPFxExtensionAppWebpartInstance;
       if (!this.SPFxExtensionInstance) {
         console.warn(SPFXPREFIX, "App instance is undefined, cannot mount app", appId);
         return;
@@ -355,7 +357,7 @@ export default class SpfxExtensionloaderWebPart extends BaseClientSideWebPart<IS
     // Register once: store registration so we can remove it later
     if (!this.appAddedListenerRegistration) {
       this.appAddedListenerRegistration = window.__SPFxExtensions.AddAppEventListener("appAdded", (app: SPFxExtensionAppDefinition) => {
-        if (app.isWebPartApp) {
+        if (app.instanceType === "webpart" && !app.hideWebPartButton) {
           this.createAndAppendAppButtons(app);
         }
       });
@@ -363,7 +365,7 @@ export default class SpfxExtensionloaderWebPart extends BaseClientSideWebPart<IS
 
     window.__SPFxExtensions.Apps.filter((app) => app.registrationCompleted).forEach(
       (app) => {
-        if (app.isWebPartApp) {
+        if (app.instanceType === "webpart" && !app.hideWebPartButton) {
           this.createAndAppendAppButtons(app);
         }
       }
@@ -526,7 +528,7 @@ export default class SpfxExtensionloaderWebPart extends BaseClientSideWebPart<IS
       this.dropDownProps.options?.splice(0, this.dropDownProps.options?.length);
 
       const appOptionsInDropdown: IPropertyPaneDropdownOption[] = window.__SPFxExtensions.Apps.filter(
-        (app) => app.isWebPartApp
+        (app) => app.instanceType === "webpart" && !app.hideWebPartButton
       ).map((app) => {
         return {
           key: app.id,
@@ -699,11 +701,7 @@ export default class SpfxExtensionloaderWebPart extends BaseClientSideWebPart<IS
     }
     this.unmountApp();
     // Remove the global event listener if we registered it
-    if (this.appAddedListenerRegistration && window.__SPFxExtensions.RemoveAppEventListener) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      window.__SPFxExtensions.RemoveAppEventListener(this.appAddedListenerRegistration as any);
-      this.appAddedListenerRegistration = undefined;
-    }
+    this.appAddedListenerRegistration?.();
     this.appButtonElements.forEach((button) => {
       button.remove();
     });

@@ -1,50 +1,47 @@
 import {
   BaseComponentsCardView,
   ComponentsCardViewParameters,
-  BasicCardView,
-  IExternalLinkCardAction,
-  IQuickViewCardAction
+  PrimaryTextCardView,
 } from '@microsoft/sp-adaptive-card-extension-base';
 import {
   ISpfxCardAdaptiveCardExtensionProps,
   ISpfxCardAdaptiveCardExtensionState,
-  QUICK_VIEW_REGISTRY_ID
+
 } from '../SpfxCardAdaptiveCardExtension';
 
-export class CardView extends BaseComponentsCardView<
+export const ERROR_CARD_VIEW_REGISTRY_ID = "SPFX_ERROR_CARD_VIEW";
+export class ErrorCardView extends BaseComponentsCardView<
   ISpfxCardAdaptiveCardExtensionProps,
   ISpfxCardAdaptiveCardExtensionState,
   ComponentsCardViewParameters
 > {
+
   public get cardViewParameters(): ComponentsCardViewParameters {
-    return BasicCardView({
+    return PrimaryTextCardView({
       cardBar: {
         componentName: 'cardBar',
-        title: this.properties.title
+        title: "Error",
       },
       header: {
         componentName: 'text',
-        text: "SPFx Adaptive Card Extension"
+        text: "Error In Card View"
+      },
+      body: {
+        componentName: "text",
+        text: `
+        ${this.state.error}
+        `
       },
       footer: {
         componentName: 'cardButton',
-        title: "Quick View",
+        title: "View Details",
         action: {
-          type: 'QuickView',
+          type: 'ExternalLink',
           parameters: {
-            view: QUICK_VIEW_REGISTRY_ID
+            target: `https://aka.ms/spfx-adaptive-card-extensions-samples#${this.state.errorCode}`
           }
         }
       }
     });
-  }
-
-  public get onCardSelection(): IQuickViewCardAction | IExternalLinkCardAction | undefined {
-    return {
-      type: 'ExternalLink',
-      parameters: {
-        target: 'https://www.bing.com'
-      }
-    };
   }
 }
