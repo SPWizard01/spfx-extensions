@@ -37,7 +37,7 @@ export default class SpfxExtensionloaderWebPart extends BaseClientSideWebPart<IS
 
   configuratorUrl = "/sites/appcatalog/SPFxExtensionsData/SitePages/SPFxExtensionsConfigurator.aspx";
   coreInitPromise = new Promise((resolve) => {
-    import(/* webpackChunkName: "spfx-extension-loader" */"../../services/initCoreService").then(({ initCore }) => {
+    import(/* webpackChunkName: "spfx-extensions-loader" */"../../services/initCoreService").then(({ initCore }) => {
       const envType =
         Environment.type === EnvironmentType.SharePoint
           ? "SharePoint"

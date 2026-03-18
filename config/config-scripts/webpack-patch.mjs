@@ -1,7 +1,3 @@
-import SourceMapDevToolPlugin from "webpack/lib/SourceMapDevToolPlugin.js";
-import TerserPlugin from "terser-webpack-plugin";
-import CopyPlugin from "copy-webpack-plugin";
-import path from "path";
 const isProd =
   process.argv.indexOf("--ship") > -1 ||
   process.argv.indexOf("--production") > -1;
@@ -25,88 +21,94 @@ export default function updatedWebpackConfig(webpackConfig) {
     forOf: true,
     asyncFunction: true,
   };
-  webpackConfig.devtool = "source-map";
+  // webpackConfig.devtool = "source-map";
   webpackConfig.optimization.splitChunks = {
     cacheGroups: {
       defaultVendors: false,
     },
   };
-  webpackConfig.optimization.minimizer = [];
-  webpackConfig.optimization.minimizer = [
-    new TerserPlugin({
-      // minify: TerserPlugin.esbuildMinify,
-      extractComments: false,
-      terserOptions: {
-        // comments: "all",
-        sourceMap: false,
-      },
-      exclude:
-        /(spfx-extension-core|spfx-extension-wrapper|spfx-extension-coreconfigurator)/,
-    }),
-  ];
-  webpackConfig.module.rules.push({
-    test: /(spfx-extension-core|spfx-extension-wrapper|spfx-extension-coreconfigurator)/,
-    extractSourceMap: true,
-  });
-  // console.log(webpackConfig.plugins);
-  // webpackConfig.plugins.push(
-  //   new CopyPlugin({
-  //     patterns: [
-  //       {
-  //         from: "*.js.map",
-  //         context: "node_modules/@spfx-extensions/core/dist/core",
-  //         // context: path.relative(path.dirname()),
-  //         info: (file) => {
-  //           console.log(file);
-  //           return { minimized: true };
-  //         },
-  //       },
-  //     ],
-  //   }),
+  // webpackConfig.optimization.minimizer = [];
+  //find the source-map-loader and disable
+  // const srcMapLoaderIdx = webpackConfig.module.rules.findIndex(
+  //   (rule) =>
+  //     rule.use?.loader && rule.use.loader.indexOf("source-map-loader") !== -1,
   // );
-  // webpackConfig.plugins.push(new SourceMapDevToolPlugin({
-  //   // test: /__spfxCore\.js$/
-  //   test: (asset) =>{
-  //     console.log("Evaluating asset for source map generation:", asset);
-  //     return false;
-  //   }
+  // if (srcMapLoaderIdx > -1) {
+  //   webpackConfig.module.rules.splice(srcMapLoaderIdx, 1);
+  // }
+  // console.log(webpackConfig.optimization.minimizer)
+  // webpackConfig.optimization.minimizer = [
+  //   // new TerserPlugin({
+  //   //   exclude:
+  //   //     /(spfx-extension-core|spfx-extension-wrapper|spfx-extension-coreconfigurator)/,
+  //   // }),
+  // ];
+  // webpackConfig.module.rules.push({
+  //   test: /(spfx-extension-core|spfx-extension-wrapper|spfx-extension-coreconfigurator)/,
+  //   // test: /\.js$/,
+  //   enforce: "post",
+  //   use: { "loader": "source-map-loader" },
+  //   // extractSourceMap: true,
+  // });
+  // webpackConfig.plugins.push(new webpack.SourceMapDevToolPlugin({
+  //   test: /spfx-extensions-core\.js/,
+  //   // test(asset) {
+  //   //   const isMatch = /spfx-extensions-core\.js(\?v=\w+)?$/.test(asset);
+  //   //   console.log("Processing asset for source map:", asset, isMatch);
+  //   //   return isMatch;
+  //   // },
+  //   append: `\n//# sourceMappingURL=spfx-extensions-core.js.map`,
   // }))
+  // console.log("Updated webpack configuration:", webpackConfig.module.rules);
   webpackConfig.module.rules.push({
-    test: /__spfxCore\.js$/,
+    test: /spfx-extensions-core\.js$/,
     generator: {
-      filename: "spfx-extension-core[ext]?v=[hash]",
+      filename: "spfx-extensions-core[ext]?v=[hash]",
+    },
+    type: "asset/resource",
+  });
+  // webpackConfig.module.rules.push({
+  //   test: /\.map$/,
+  //   generator: {
+  //     filename: "[name][ext]?v=[hash]",
+  //   },
+  //   type: "asset/resource",
+  // });
+
+  webpackConfig.module.rules.push({
+    test: /spfx-extensions-coreconfigurator\.js$/,
+    generator: {
+      filename: "spfx-extensions-coreconfigurator[ext]?v=[hash]",
+    },
+    type: "asset/resource",
+  });
+    webpackConfig.module.rules.push({
+    test: /spfx-extensions-classiccustomaction\.js$/,
+    generator: {
+      filename: "spfx-extensions-classiccustomaction[ext]?v=[hash]",
     },
     type: "asset/resource",
   });
   webpackConfig.module.rules.push({
-    test: /__spfxCoreConfigurator\.js$/,
+    test: /spfx-extensions-classicwrapper\.js$/,
     generator: {
-      filename: "spfx-extension-coreconfigurator[ext]?v=[hash]",
+      filename: "spfx-extensions-classicwrapper[ext]?v=[hash]",
     },
     type: "asset/resource",
   });
-  webpackConfig.module.rules.push({
-    test: /__spfxWrapperClassic\.js$/,
-    generator: {
-      filename: "spfx-extension-wrapper[ext]?v=[hash]",
-    },
-    type: "asset/resource",
-  });
-  webpackConfig.module.rules.push({
-    test: /__spfxCore\.js\.map$/,
-    generator: {
-      filename: "spfx-extension-core.js[ext]?[hash]",
-    },
-    type: "asset/resource",
-  });
-  webpackConfig.resolve.alias["__spfxCore.js"] =
-    "@spfx-extensions/core/spfxCoreEntry";
-  webpackConfig.resolve.alias["__spfxCoreConfigurator.js"] =
-    "@spfx-extensions/core/configurator";
-  webpackConfig.resolve.alias["__spfxWrapperClassic.js"] =
-    "@spfx-extensions/core/classicWrapper";
-  webpackConfig.resolve.alias["__spfxCore.js.map"] =
-    "@spfx-extensions/core/dist/core/__spfxCore.js.map";
+
+  // webpackConfig.resolve.alias["spfx-extensions-core.js"] =
+  //   "@spfx-extensions/core/spfx-extensions-core";
+  // webpackConfig.resolve.alias["spfx-extensions-core.js.map"] =
+  //   "@spfx-extensions/core/dist/core/spfx-extensions-core.js.map";
+
+  // webpackConfig.resolve.alias["spfx-extensions-coreconfigurator.js"] =
+  //   "@spfx-extensions/core/spfx-extensions-coreconfigurator";
+  // webpackConfig.resolve.alias["spfx-extensions-coreconfigurator.js.map"] =
+  //   "@spfx-extensions/core/spfx-extensions-coreconfigurator";
+
+  // webpackConfig.resolve.alias["spfx-extensions-classicwrapper.js"] =
+  //   "@spfx-extensions/core/spfx-extensions-classicwrapper";
   // webpackConfig.resolve.alias.push({
 
   // })

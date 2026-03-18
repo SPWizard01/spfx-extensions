@@ -20,7 +20,7 @@ export default class SpfxExtensionApplicationCustomizer
   extends BaseApplicationCustomizer<ISpfxExtensionApplicationCustomizerProperties> {
 
   corePromise = new Promise((resolve) => {
-    import(/* webpackChunkName: "spfx-extension-loader" */"../../services/initCoreService").then(({ initCore, registerPlaceHolderProvider }) => {
+    import(/* webpackChunkName: "spfx-extensions-loader" */"../../services/initCoreService").then(({ initCore, registerPlaceHolderProvider }) => {
       initCore("SharePoint").then(() => {
         registerPlaceHolderProvider(this.context.placeholderProvider, this);
         resolve(true);

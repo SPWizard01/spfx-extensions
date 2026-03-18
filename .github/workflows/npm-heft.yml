@@ -1,4 +1,4 @@
-name: NodeJS with Gulp
+name: NodeJS
 
 on:
   push:
@@ -12,18 +12,16 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-    strategy:
-      matrix:
-        node-version: [22.x]
+      id-token: write # Required for OIDC
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 2
-      - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v4
+      - name: Use Node.js 22
+        uses: actions/setup-node@v6
         with:
-          node-version: ${{ matrix.node-version }}
+          node-version: "22"
 
       - uses: oven-sh/setup-bun@v2
         name: Setup Bun
@@ -39,22 +37,13 @@ jobs:
           echo "current-version ${{ steps.tagauto.outputs.current-version }}"
           echo "tagautotag ${{ steps.tagauto.outputs.tag }}"
 
-      # - name: Replace values in package JSON
-      #   uses: tnikFi/json-file-transform@v1
-      #   if: steps.autotag.outputs.old_tag != ''
-      #   with:
-      #     files: "**/package.json"
-      #     key-value-pairs: |
-      #       version=${{ steps.autotag.outputs.tag }}
-
       - name: Build
         run: |
           npm install
-          gulp bundle --ship
-          gulp package-solution --ship
+          npm run build
 
       - name: Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         if: steps.tagauto.outputs.previous-version != steps.tagauto.outputs.current-version && steps.tagauto.outputs.current-version != ''
         with:
           name: spfx-solution
@@ -68,9 +57,12 @@ jobs:
           tag_name: ${{ steps.tagauto.outputs.tag }}
           files: |
             ./dist/deploy/sp-fx-extensions.sppkg
-      - name: Release To NPM
+      - name: "Release To NPM"
         if: steps.tagauto.outputs.previous-version != steps.tagauto.outputs.current-version && steps.tagauto.outputs.current-version != ''
-        run: |
-          bun publish
-        env:
-          NPM_CONFIG_TOKEN: ${{ secrets.NPM_TOKEN }}
+        uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+          registry-url: "https://registry.npmjs.org"
+      - run: npm publish
+        # env:
+        #   NPM_CONFIG_TOKEN: ${{ secrets.NPM_TOKEN }}
