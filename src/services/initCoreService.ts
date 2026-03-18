@@ -8,6 +8,7 @@ import { loadCoreForSPFxOrClassic } from "@spfx-extensions/core/spfxLoader"
 import coreUrl from "__spfxCore.js";
 import configuratorUrl from "__spfxCoreConfigurator.js";
 import wrapperUrl from "__spfxWrapperClassic.js";
+import "__spfxCore.js.map";
 
 let placeHolderResolved = false;
 
