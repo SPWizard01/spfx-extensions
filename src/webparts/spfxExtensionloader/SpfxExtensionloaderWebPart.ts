@@ -83,7 +83,7 @@ export default class SpfxExtensionloaderWebPart extends BaseClientSideWebPart<IS
   webPartWidth!: number;
 
   public async onInit() {
-    if (DEBUG) {
+    if (ISDEBUG) {
       console.debug(SPFXPREFIX, "onInit", this.instanceId);
     }
 
@@ -394,7 +394,7 @@ export default class SpfxExtensionloaderWebPart extends BaseClientSideWebPart<IS
   }
 
   async renderEmptyApp() {
-    if (DEBUG) {
+    if (ISDEBUG) {
       console.debug(SPFXPREFIX, "Rendering display or edit mode empty webpart");
     }
 
@@ -418,7 +418,7 @@ export default class SpfxExtensionloaderWebPart extends BaseClientSideWebPart<IS
     // if (this.context.propertyPane.isPropertyPaneOpen()) {
     //   this.onPropertyPaneConfigurationStart();
     // }
-    if (DEBUG) {
+    if (ISDEBUG) {
       console.debug(SPFXPREFIX, "render", this.instanceId);
     }
     await this.coreInitPromise;
@@ -614,7 +614,7 @@ export default class SpfxExtensionloaderWebPart extends BaseClientSideWebPart<IS
   protected onPropertyPaneConfigurationComplete(): void {
     const isPaneOpen = this.context.propertyPane.isPropertyPaneOpen();
 
-    if (DEBUG) {
+    if (ISDEBUG) {
       console.debug(SPFXPREFIX, "onPropertyPaneConfigurationComplete", isPaneOpen);
     }
 
@@ -646,7 +646,7 @@ export default class SpfxExtensionloaderWebPart extends BaseClientSideWebPart<IS
     //eslint-disable-next-line @typescript-eslint/no-explicit-any
     newValue: any
   ): void {
-    if (DEBUG) {
+    if (ISDEBUG) {
       console.debug(SPFXPREFIX, "onPropertyPaneFieldChanged", propertyPath, oldValue, newValue);
     }
     // if selected app changed unmount the old app
@@ -672,7 +672,7 @@ export default class SpfxExtensionloaderWebPart extends BaseClientSideWebPart<IS
   }
 
   protected onDisplayModeChanged(oldDisplayMode: DisplayMode): void {
-    if (DEBUG) {
+    if (ISDEBUG) {
       console.debug(SPFXPREFIX, "onDisplayModeChanged", oldDisplayMode);
     }
     const newDisplayMode = oldDisplayMode === DisplayMode.Edit ? "Read" : "Edit";
@@ -680,21 +680,21 @@ export default class SpfxExtensionloaderWebPart extends BaseClientSideWebPart<IS
   }
 
   protected onAfterPropertyPaneChangesApplied(): void {
-    if (DEBUG) {
+    if (ISDEBUG) {
       console.debug(SPFXPREFIX, "onAfterPropertyPaneChangesApplied");
     }
     this.SPFxExtensionInstance?.executeListeners("onPropertyPaneChangesApplied", undefined);
   }
 
   protected onAfterResize(newWidth: number): void {
-    if (DEBUG) {
+    if (ISDEBUG) {
       console.debug(SPFXPREFIX, "onAfterResize");
     }
     this.SPFxExtensionInstance?.executeListeners("onAfterResize", { newWidth });
   }
 
   protected onDispose(): void {
-    if (DEBUG) {
+    if (ISDEBUG) {
       console.debug(SPFXPREFIX, "onDispose");
     }
     this.unmountApp();
