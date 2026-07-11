@@ -1,4 +1,10 @@
-import { DisplayMode, Environment, EnvironmentType, ServiceScope, Version } from "@microsoft/sp-core-library";
+import {
+  DisplayMode,
+  Environment,
+  EnvironmentType,
+  ServiceScope,
+  Version,
+} from "@microsoft/sp-core-library";
 import {
   IPropertyPaneConditionalGroup,
   type IPropertyPaneConfiguration,
@@ -10,16 +16,32 @@ import {
   PropertyPaneButton,
   PropertyPaneDropdown,
   PropertyPaneFieldType,
-  PropertyPaneLabel
+  PropertyPaneLabel,
 } from "@microsoft/sp-property-pane";
-import { BaseClientSideWebPart, IWebPartPropertiesMetadata, WebPartContext } from "@microsoft/sp-webpart-base";
+import {
+  BaseClientSideWebPart,
+  IWebPartPropertiesMetadata,
+  WebPartContext,
+} from "@microsoft/sp-webpart-base";
 import { ITopActions, ITopActionsField } from "@microsoft/sp-top-actions";
-import { SPFxExtensionAppConfig, SPFxExtensionAppDefinition, SPFxExtensionAppIcon, SPFxExtensionAppInstance, SPFxExtensionAppRuntimeConfig, SPFxExtensionAppSearchableData } from "@spfx-extensions/core";
-import { APP_BUTTON_LABEL, EDIT_PAGE_AND_SELECT_WEBPART, SELECT_WEBPART, SPFXPREFIX } from "../../utilities/constants";
+import {
+  SPFxExtensionAppConfig,
+  SPFxExtensionAppDefinition,
+  SPFxExtensionAppIcon,
+  SPFxExtensionAppInstance,
+  SPFxExtensionAppRuntimeConfig,
+  SPFxExtensionAppSearchableData,
+} from "@spfx-extensions/core";
+import {
+  APP_BUTTON_LABEL,
+  EDIT_PAGE_AND_SELECT_WEBPART,
+  SELECT_WEBPART,
+  SPFXPREFIX,
+} from "../../utilities/constants";
 import {
   ThemeProvider,
   type IReadonlyTheme,
-} from '@microsoft/sp-component-base';
+} from "@microsoft/sp-component-base";
 //import * as strings from "SpfxExtensionloaderWebPartStrings";
 import styles from "./SpfxExtensionloaderWebPart.module.scss";
 
@@ -31,26 +53,41 @@ export interface ISpfxExtensionloaderWebPartProps extends SPFxExtensionAppSearch
 
 type propertyPath = keyof ISpfxExtensionloaderWebPartProps;
 
-
-
 export default class SpfxExtensionloaderWebPart extends BaseClientSideWebPart<ISpfxExtensionloaderWebPartProps> {
-
-  configuratorUrl = "/sites/appcatalog/SPFxExtensionsData/SitePages/SPFxExtensionsConfigurator.aspx";
-  coreInitPromise = new Promise((resolve) => {
-    import(/* webpackChunkName: "spfx-extensions-loader" */"../../services/initCoreService").then(({ initCore }) => {
-      const envType =
-        Environment.type === EnvironmentType.SharePoint
-          ? "SharePoint"
-          : "ClassicSharePoint";
-      initCore(envType).then(() => {
-        this.configuratorUrl = window.__SPFxExtensions.Utils.ConfiguratorPageUrl;
-        resolve(true);
-      }).catch((e) => {
-        console.error(SPFXPREFIX, "Initializing SPFxExtensions Core from WebPart failed", e);
+  configuratorUrl =
+    "/sites/appcatalog/SPFxExtensionsData/SitePages/SPFxExtensionsConfigurator.aspx";
+  coreInitPromise = new Promise((resolve, reject) => {
+    import(
+      /* webpackChunkName: "spfx-extensions-loader" */ "../../services/initCoreService"
+    )
+      .then(({ initCore }) => {
+        const envType =
+          Environment.type === EnvironmentType.SharePoint
+            ? "SharePoint"
+            : "ClassicSharePoint";
+        initCore(envType)
+          .then(() => {
+            this.configuratorUrl =
+              window.__SPFxExtensions.Utils.ConfiguratorPageUrl;
+            resolve(true);
+          })
+          .catch((e) => {
+            console.error(
+              SPFXPREFIX,
+              "Initializing SPFxExtensions Core from WebPart failed",
+              e,
+            );
+            reject(e);
+          });
       })
-    }).catch((e) => {
-      console.error(SPFXPREFIX, "Importing SPFxExtensions Core from WebPart failed", e);
-    })
+      .catch((e) => {
+        console.error(
+          SPFXPREFIX,
+          "Importing SPFxExtensions Core from WebPart failed",
+          e,
+        );
+        reject(e);
+      });
   });
 
   SPFxExtensionInstance: SPFxExtensionAppInstance | undefined;
@@ -60,7 +97,7 @@ export default class SpfxExtensionloaderWebPart extends BaseClientSideWebPart<IS
     selectedKey: "",
     disabled: true,
   };
-  appDescription = "";
+  selectedAppDefinition: SPFxExtensionAppDefinition | undefined;
   hideAppSelectorWhenAppLoaded = false;
   hideConfiguratorButton = false;
   configDomElement: HTMLElement | undefined;
@@ -75,6 +112,10 @@ export default class SpfxExtensionloaderWebPart extends BaseClientSideWebPart<IS
   // token/registration returned by AddAppEventListener so we can remove it
   private appAddedListenerRegistration: unknown | undefined;
 
+  // single-flight guard: while a render is in progress this holds the in-flight
+  // promise so repeated SPFx render() calls dedupe onto the same execution
+  private renderInFlight: Promise<void> | undefined;
+
   // for some reason onRender these properties are not available if accessing `this` on edit mode
   // so we copy them in onInit
   webPartContext!: WebPartContext;
@@ -87,7 +128,9 @@ export default class SpfxExtensionloaderWebPart extends BaseClientSideWebPart<IS
       console.debug(SPFXPREFIX, "onInit", this.instanceId);
     }
 
-    this.themeProvider = this.context.serviceScope.consume(ThemeProvider.serviceKey);
+    this.themeProvider = this.context.serviceScope.consume(
+      ThemeProvider.serviceKey,
+    );
     this.serviceScope = this.context.serviceScope;
 
     this.webPartContext = this.context;
@@ -98,7 +141,6 @@ export default class SpfxExtensionloaderWebPart extends BaseClientSideWebPart<IS
     // so we offload it to a promise which we can await in render
     await this.coreInitPromise;
   }
-
 
   //#region App mounting and property forwarding
   openPropertyPane() {
@@ -122,13 +164,18 @@ export default class SpfxExtensionloaderWebPart extends BaseClientSideWebPart<IS
     // this.properties.searchableText = a;
     this.properties.SPFxExtensionAppConfiguration = config;
     if (raiseEvent) {
-      this.SPFxExtensionInstance?.executeListeners("onConfigurationChange", config);
+      this.SPFxExtensionInstance?.executeListeners(
+        "onConfigurationChange",
+        config,
+      );
     }
   }
 
   getConfigValue(key?: string) {
     if (key) {
-      let dataByKey = (this.properties[key as keyof ISpfxExtensionloaderWebPartProps] as SPFxExtensionAppConfig | undefined);
+      let dataByKey = this.properties[
+        key as keyof ISpfxExtensionloaderWebPartProps
+      ] as SPFxExtensionAppConfig | undefined;
       if (typeof dataByKey === "undefined") {
         dataByKey = this.properties.SPFxExtensionAppConfiguration;
       }
@@ -177,61 +224,21 @@ export default class SpfxExtensionloaderWebPart extends BaseClientSideWebPart<IS
     if (ISDEBUG) {
       console.debug(SPFXPREFIX, "Mounting app", appId, "at", this.domElement);
     }
-    //clean HTML
-    this.domElement.innerHTML = "";
+    let possibleError: Error | undefined;
     try {
-      const runTimeConfig: SPFxExtensionAppRuntimeConfig = {
-        domElement: this.domElement,
-        //eslint-disable-next-line @typescript-eslint/no-explicit-any
-        webpart: this as any,
-        openPropertyPane: () => {
-          this.openPropertyPane();
-        },
-        closePropertyPane: () => {
-          this.closePropertyPane();
-        },
-        isPropertyPaneOpen: () => {
-          return this.isPropertyPaneOpen();
-        },
-        saveConfigValue: (config: SPFxExtensionAppConfig, raise = true) => {
-          this.saveConfigValue(config, raise);
-        },
-        getConfigValue: (key?: string) => {
-          return this.getConfigValue(key);
-        },
-        getSearchableData: () => {
-          return this.getSearchData();
-        },
-        setSearchableData: (data: SPFxExtensionAppSearchableData) => {
-          this.setSearchData(data);
-        },
-        setTopActions: (actions: ITopActionsField[]) => {
-          this.setTopActions(actions);
-        },
-        getTopActions: () => {
-          return this.getTopActions();
-        },
-        getThemeProvider: () => {
-          return this.getThemeProvider();
-        },
-        getConfigDomElement: () => {
-          return this.getConfigDomElement();
-        },
-        getContext: () => {
-          return this.getContext();
-        },
-        getServiceScope: () => {
-          return this.getServiceScope();
-        }
-      };
-      this.SPFxExtensionInstance = await window.__SPFxExtensions.InstantiateApp(appId, runTimeConfig);
-      if (!this.SPFxExtensionInstance) {
-        console.warn(SPFXPREFIX, "App instance is undefined, cannot mount app", appId);
-        return;
-      }
-      const newApp = window.__SPFxExtensions.Apps.find((app) => app.id === appId);
-      if (newApp) {
-        this.appDescription = newApp.description;
+      //clean HTML
+      this.domElement.innerHTML = "";
+      const runTimeConfig = this.createRuntimeConfig();
+      this.SPFxExtensionInstance = window.__SPFxExtensions.InstantiateApp(
+        appId,
+        runTimeConfig,
+      );
+      await this.SPFxExtensionInstance.instanceLoadPromise;
+      const foundApp = window.__SPFxExtensions.Apps.find(
+        (app) => app.id === appId,
+      );
+      if (foundApp) {
+        this.selectedAppDefinition = foundApp;
         //spfx specific, for some reason refresh does not work properly (custom field is not rerendered)
         // this.context.propertyPane.refresh();
         // if (this.context.propertyPane.isPropertyPaneOpen()) {
@@ -239,12 +246,62 @@ export default class SpfxExtensionloaderWebPart extends BaseClientSideWebPart<IS
         //   this.context.propertyPane.open();
         // }
       }
-    }
-    catch (err) {
+      if (ISDEBUG) {
+        console.debug(SPFXPREFIX, "App mounted", appId);
+      }
+    } catch (err) {
       console.error(SPFXPREFIX, "Error while mounting appid", appId, err);
-      const error = new Error(`${err}`);
-      return error;
+      possibleError = err as Error;
+    } finally {
+      this.renderCompleted(possibleError);
     }
+  }
+
+  private createRuntimeConfig(): SPFxExtensionAppRuntimeConfig<unknown> {
+    return {
+      domElement: this.domElement,
+      //eslint-disable-next-line @typescript-eslint/no-explicit-any
+      webpart: this as any,
+      openPropertyPane: () => {
+        this.openPropertyPane();
+      },
+      closePropertyPane: () => {
+        this.closePropertyPane();
+      },
+      isPropertyPaneOpen: () => {
+        return this.isPropertyPaneOpen();
+      },
+      saveConfigValue: (config: SPFxExtensionAppConfig, raise = true) => {
+        this.saveConfigValue(config, raise);
+      },
+      getConfigValue: (key?: string) => {
+        return this.getConfigValue(key);
+      },
+      getSearchableData: () => {
+        return this.getSearchData();
+      },
+      setSearchableData: (data: SPFxExtensionAppSearchableData) => {
+        this.setSearchData(data);
+      },
+      setTopActions: (actions: ITopActionsField[]) => {
+        this.setTopActions(actions);
+      },
+      getTopActions: () => {
+        return this.getTopActions();
+      },
+      getThemeProvider: () => {
+        return this.getThemeProvider();
+      },
+      getConfigDomElement: () => {
+        return this.getConfigDomElement();
+      },
+      getContext: () => {
+        return this.getContext();
+      },
+      getServiceScope: () => {
+        return this.getServiceScope();
+      },
+    };
   }
 
   private unmountApp() {
@@ -253,9 +310,11 @@ export default class SpfxExtensionloaderWebPart extends BaseClientSideWebPart<IS
         console.debug(
           SPFXPREFIX,
           "Unmounting app",
+          this.properties.selectedApp,
+          "instance",
           this.SPFxExtensionInstance.key,
           "at",
-          this.SPFxExtensionInstance.domElement
+          this.SPFxExtensionInstance.domElement,
         );
       }
       this.SPFxExtensionInstance.unmount?.();
@@ -314,9 +373,7 @@ export default class SpfxExtensionloaderWebPart extends BaseClientSideWebPart<IS
       this.dropDownProps.selectedKey = app.id;
       // refresh to rerender the dropdown and description
       this.context.propertyPane.refresh();
-      this.mountApp(app.id).catch(() => {
-        // do nothing
-      });
+      this.mountApp(app.id);
     });
 
     this.appButtonsContainer.appendChild(appButtonElement);
@@ -354,20 +411,24 @@ export default class SpfxExtensionloaderWebPart extends BaseClientSideWebPart<IS
 
     // Register once: store registration so we can remove it later
     if (!this.appAddedListenerRegistration) {
-      this.appAddedListenerRegistration = window.__SPFxExtensions.AddAppEventListener("appAdded", (app: SPFxExtensionAppDefinition) => {
-        if (app.isWebPartApp) {
-          this.createAndAppendAppButtons(app);
-        }
-      });
+      this.appAddedListenerRegistration =
+        window.__SPFxExtensions.AddAppEventListener(
+          "appAdded",
+          (app: SPFxExtensionAppDefinition) => {
+            if (app.isWebPartApp) {
+              this.createAndAppendAppButtons(app);
+            }
+          },
+        );
     }
 
-    window.__SPFxExtensions.Apps.filter((app) => app.registrationCompleted).forEach(
-      (app) => {
-        if (app.isWebPartApp) {
-          this.createAndAppendAppButtons(app);
-        }
+    window.__SPFxExtensions.Apps.filter(
+      (app) => app.registrationCompleted,
+    ).forEach((app) => {
+      if (app.isWebPartApp) {
+        this.createAndAppendAppButtons(app);
       }
-    );
+    });
     try {
       await window.__SPFxExtensions.Utils.spAppInitializationPromise;
       // this.domElement.appendChild(this.webpartSectionElement);
@@ -382,12 +443,12 @@ export default class SpfxExtensionloaderWebPart extends BaseClientSideWebPart<IS
         promise
           .catch(() => {
             //do nothing
-          }).finally(() => {
+          })
+          .finally(() => {
             buttonLoader.remove();
           });
       });
-    }
-    catch (err) {
+    } catch (err) {
       console.error(SPFXPREFIX, "Error while awaiting app initialization", err);
       return new Error(`Error while awaiting app initialization: ${err}`);
     }
@@ -411,7 +472,35 @@ export default class SpfxExtensionloaderWebPart extends BaseClientSideWebPart<IS
   }
   //#endregion HTML Elements Rendering
 
-  public async render() {
+  public render(): Promise<void> {
+    // SPFx can invoke render() multiple times in quick succession. We only want a
+    // single render (and a single mountApp) executing at a time. While one render
+    // is in flight, subsequent calls dedupe onto the same promise instead of
+    // kicking off another render; renderCompleted still runs once per execution.
+    if (this.renderInFlight) {
+      if (ISDEBUG) {
+        console.debug(
+          SPFXPREFIX,
+          "Render already in progress. App Id:",
+          this.properties.selectedApp,
+          "Instance Id:",
+          this.instanceId,
+        );
+      }
+      return this.renderInFlight;
+    }
+    this.renderInFlight = this.renderInternal()
+      .catch((err) => {
+        this.renderCompleted(err);
+      })
+      .finally(() => {
+        this.renderInFlight = undefined;
+      });
+
+    return this.renderInFlight;
+  }
+
+  public async renderInternal(): Promise<void> {
     // might not be required anymore
     // initial testing shows that it works without this
     // required when adding same Webpart while another instance is already open and configuration pane is open as well.
@@ -419,32 +508,33 @@ export default class SpfxExtensionloaderWebPart extends BaseClientSideWebPart<IS
     //   this.onPropertyPaneConfigurationStart();
     // }
     if (ISDEBUG) {
-      console.debug(SPFXPREFIX, "render", this.instanceId);
+      console.debug(
+        SPFXPREFIX,
+        "rendering",
+        this.properties.selectedApp,
+        "on instance",
+        this.instanceId,
+      );
     }
     await this.coreInitPromise;
-    let possibleError: Error | undefined = undefined;
 
-    try {
-      //in live editing mode dispose is not called when in production build for some reason
-      //we unmount and remount the app if applicable
-      if (this.SPFxExtensionInstance) {
-        if (this.SPFxExtensionInstance.unmountOnRender) {
-          this.unmountApp();
-        } else {
-          this.SPFxExtensionInstance.executeListeners("onRender", undefined);
-          return;
-        }
-      }
-
-      if (this.properties.selectedApp && !this.SPFxExtensionInstance) {
-        possibleError = await this.mountApp(this.properties.selectedApp);
+    //in live editing mode dispose is not called when in production build for some reason
+    //we unmount and remount the app if applicable
+    if (this.SPFxExtensionInstance) {
+      if (this.SPFxExtensionInstance.unmountOnRender) {
+        this.unmountApp();
+      } else {
+        this.SPFxExtensionInstance.executeListeners("onRender", undefined);
         return;
       }
-
-      possibleError = await this.renderEmptyApp();
-    } finally {
-      this.renderCompleted(possibleError, true);
     }
+
+    if (this.properties.selectedApp && !this.SPFxExtensionInstance) {
+      await this.mountApp(this.properties.selectedApp);
+      return;
+    }
+
+    await this.renderEmptyApp();
   }
 
   protected renderCompleted(error?: Error, didUpdate?: boolean): void {
@@ -473,7 +563,7 @@ export default class SpfxExtensionloaderWebPart extends BaseClientSideWebPart<IS
   }
 
   CustomWebpartConfigurationField(
-    name: string
+    name: string,
   ): IPropertyPaneField<IPropertyPaneCustomFieldProps> {
     return {
       type: PropertyPaneFieldType.Custom,
@@ -489,15 +579,22 @@ export default class SpfxExtensionloaderWebPart extends BaseClientSideWebPart<IS
                 "onConfigurationRender",
                 {
                   domElement,
-                }
+                },
               );
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            }).catch((err: any) => {
-              console.error(SPFXPREFIX, "Error while awaiting app to load", err);
+            })
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            .catch((err: any) => {
+              console.error(
+                SPFXPREFIX,
+                "Error while awaiting app to load",
+                err,
+              );
             });
         },
         onDispose: (domElement, _context) => {
-          this.SPFxExtensionInstance?.executeListeners("onConfigurationClose", { domElement });
+          this.SPFxExtensionInstance?.executeListeners("onConfigurationClose", {
+            domElement,
+          });
           this.configDomElement = undefined;
         },
         // context: this.context,
@@ -513,26 +610,28 @@ export default class SpfxExtensionloaderWebPart extends BaseClientSideWebPart<IS
     window.__SPFxExtensions.AllAppAssetsLoadedPromise.then(() => {
       // register description if an app is matching this webpart
       const selectedApp = window.__SPFxExtensions.Apps.find(
-        (app) => app.id === this.properties.selectedApp
+        (app) => app.id === this.properties.selectedApp,
       );
       if (selectedApp) {
-        this.appDescription = selectedApp.description;
+        this.selectedAppDefinition = selectedApp;
         this.hideAppSelectorWhenAppLoaded =
           selectedApp.hideAppSelectorWhenAppLoaded ?? false;
-        this.hideConfiguratorButton = selectedApp.hideConfiguratorButton ?? false;
+        this.hideConfiguratorButton =
+          selectedApp.hideConfiguratorButton ?? false;
       }
 
       // Clear dropdown options in propertypane
       this.dropDownProps.options?.splice(0, this.dropDownProps.options?.length);
 
-      const appOptionsInDropdown: IPropertyPaneDropdownOption[] = window.__SPFxExtensions.Apps.filter(
-        (app) => app.isWebPartApp
-      ).map((app) => {
-        return {
-          key: app.id,
-          text: app.name,
-        };
-      });
+      const appOptionsInDropdown: IPropertyPaneDropdownOption[] =
+        window.__SPFxExtensions.Apps.filter((app) => app.isWebPartApp).map(
+          (app) => {
+            return {
+              key: app.id,
+              text: app.name,
+            };
+          },
+        );
 
       this.dropDownProps.options?.push(...appOptionsInDropdown);
 
@@ -544,12 +643,18 @@ export default class SpfxExtensionloaderWebPart extends BaseClientSideWebPart<IS
       this.context.propertyPane.refresh();
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     }).catch((err: any) => {
-      console.error(SPFXPREFIX, "Error while awaiting all app assets to load", err);
+      console.error(
+        SPFXPREFIX,
+        "Error while awaiting all app assets to load",
+        err,
+      );
     });
   }
 
   protected getPropertyPaneConfiguration(): IPropertyPaneConfiguration {
-    const configuratorButton: IPropertyPaneGroup | IPropertyPaneConditionalGroup = {
+    const configuratorButton:
+      | IPropertyPaneGroup
+      | IPropertyPaneConditionalGroup = {
       groupFields: [
         PropertyPaneLabel("spfxExtensionLoaderLabel", {
           text: `App not working? Try refreshing the page. Or go to the configuration page.`,
@@ -558,12 +663,17 @@ export default class SpfxExtensionloaderWebPart extends BaseClientSideWebPart<IS
           text: "Open Configurator",
           buttonType: 1,
           onClick: () => {
-            window.open(`${this.configuratorUrl}?web=${this.context.pageContext.web.absoluteUrl}`, "_blank");
-          }
-        })
-      ]
+            window.open(
+              `${this.configuratorUrl}?web=${this.context.pageContext.web.absoluteUrl}`,
+              "_blank",
+            );
+          },
+        }),
+      ],
     };
-    const cfgButtonGroup = this.hideConfiguratorButton ? [] : [configuratorButton];
+    const cfgButtonGroup = this.hideConfiguratorButton
+      ? []
+      : [configuratorButton];
 
     const appSelector: IPropertyPaneGroup | IPropertyPaneConditionalGroup = {
       groupFields: [
@@ -574,11 +684,13 @@ export default class SpfxExtensionloaderWebPart extends BaseClientSideWebPart<IS
           selectedKey: this.dropDownProps.selectedKey,
         }),
         PropertyPaneLabel("selectedAppDecription", {
-          text: this.appDescription,
+          text: this.selectedAppDefinition?.description ?? "",
         }),
       ],
-    }
-    const cfgAppSelector = this.hideAppSelectorWhenAppLoaded ? [] : [appSelector];
+    };
+    const cfgAppSelector = this.hideAppSelectorWhenAppLoaded
+      ? []
+      : [appSelector];
 
     return {
       pages: [
@@ -589,7 +701,7 @@ export default class SpfxExtensionloaderWebPart extends BaseClientSideWebPart<IS
             {
               groupFields: [
                 this.CustomWebpartConfigurationField(
-                  "SPFxExtensionAppConfiguration"
+                  "SPFxExtensionAppConfiguration",
                 ),
               ],
             },
@@ -605,19 +717,22 @@ export default class SpfxExtensionloaderWebPart extends BaseClientSideWebPart<IS
       onExecute: (actionName: string, updatedValue: unknown) => {
         this.SPFxExtensionInstance?.executeListeners("onTopActionExecute", {
           actionName,
-          updatedValue
+          updatedValue,
         });
-      }
-    }
+      },
+    };
   }
 
   protected onPropertyPaneConfigurationComplete(): void {
     const isPaneOpen = this.context.propertyPane.isPropertyPaneOpen();
 
     if (ISDEBUG) {
-      console.debug(SPFXPREFIX, "onPropertyPaneConfigurationComplete", isPaneOpen);
+      console.debug(
+        SPFXPREFIX,
+        "onPropertyPaneConfigurationComplete",
+        isPaneOpen,
+      );
     }
-
 
     // notify close only if the pane is not open
     // complete event fires also when config is saved
@@ -631,11 +746,9 @@ export default class SpfxExtensionloaderWebPart extends BaseClientSideWebPart<IS
 
     // When the user switches web parts then the current web part gets this event.
     if (!isPaneOpen && this.SPFxExtensionInstance) {
-
-      this.SPFxExtensionInstance.executeListeners(
-        "onConfigurationClose",
-        { domElement: this.configDomElement }
-      );
+      this.SPFxExtensionInstance.executeListeners("onConfigurationClose", {
+        domElement: this.configDomElement,
+      });
     }
   }
 
@@ -644,16 +757,22 @@ export default class SpfxExtensionloaderWebPart extends BaseClientSideWebPart<IS
     //eslint-disable-next-line @typescript-eslint/no-explicit-any
     oldValue: any,
     //eslint-disable-next-line @typescript-eslint/no-explicit-any
-    newValue: any
+    newValue: any,
   ): void {
     if (ISDEBUG) {
-      console.debug(SPFXPREFIX, "onPropertyPaneFieldChanged", propertyPath, oldValue, newValue);
+      console.debug(
+        SPFXPREFIX,
+        "onPropertyPaneFieldChanged",
+        propertyPath,
+        oldValue,
+        newValue,
+      );
     }
     // if selected app changed unmount the old app
     if (propertyPath === "selectedApp") {
       if (oldValue && oldValue !== newValue && this.SPFxExtensionInstance) {
         const shouldUnmount = confirm(
-          "You are about to switch app, this will erase all previous app configuration. Are you sure?"
+          "You are about to switch app, this will erase all previous app configuration. Are you sure?",
         );
         if (!shouldUnmount) {
           this.properties[propertyPath] = oldValue;
@@ -664,9 +783,7 @@ export default class SpfxExtensionloaderWebPart extends BaseClientSideWebPart<IS
       // if new app was selected, mount it
       if (newValue) {
         this.webpartSectionElement.remove();
-        this.mountApp(newValue).catch(() => {
-          // do nothing
-        });
+        this.mountApp(newValue);
       }
     }
   }
@@ -675,15 +792,22 @@ export default class SpfxExtensionloaderWebPart extends BaseClientSideWebPart<IS
     if (ISDEBUG) {
       console.debug(SPFXPREFIX, "onDisplayModeChanged", oldDisplayMode);
     }
-    const newDisplayMode = oldDisplayMode === DisplayMode.Edit ? "Read" : "Edit";
-    this.SPFxExtensionInstance?.executeListeners("onDisplayModeChange", newDisplayMode);
+    const newDisplayMode =
+      oldDisplayMode === DisplayMode.Edit ? "Read" : "Edit";
+    this.SPFxExtensionInstance?.executeListeners(
+      "onDisplayModeChange",
+      newDisplayMode,
+    );
   }
 
   protected onAfterPropertyPaneChangesApplied(): void {
     if (ISDEBUG) {
       console.debug(SPFXPREFIX, "onAfterPropertyPaneChangesApplied");
     }
-    this.SPFxExtensionInstance?.executeListeners("onPropertyPaneChangesApplied", undefined);
+    this.SPFxExtensionInstance?.executeListeners(
+      "onPropertyPaneChangesApplied",
+      undefined,
+    );
   }
 
   protected onAfterResize(newWidth: number): void {
@@ -699,9 +823,14 @@ export default class SpfxExtensionloaderWebPart extends BaseClientSideWebPart<IS
     }
     this.unmountApp();
     // Remove the global event listener if we registered it
-    if (this.appAddedListenerRegistration && window.__SPFxExtensions.RemoveAppEventListener) {
+    if (
+      this.appAddedListenerRegistration &&
+      window.__SPFxExtensions.RemoveAppEventListener
+    ) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      window.__SPFxExtensions.RemoveAppEventListener(this.appAddedListenerRegistration as any);
+      window.__SPFxExtensions.RemoveAppEventListener(
+        this.appAddedListenerRegistration as any,
+      );
       this.appAddedListenerRegistration = undefined;
     }
     this.appButtonElements.forEach((button) => {
@@ -762,6 +891,4 @@ export default class SpfxExtensionloaderWebPart extends BaseClientSideWebPart<IS
   protected get dataVersion(): Version {
     return Version.parse("1.0");
   }
-
-
 }
